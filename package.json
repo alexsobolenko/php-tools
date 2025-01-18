@@ -1,13 +1,26 @@
 {
     "name": "php-tools",
-    "displayName": "php-tools",
+    "displayName": "PHP tools",
     "description": "Tools for better PHP development",
     "version": "0.1.0",
+    "license": "MIT",
+    "author": {
+        "name": "Alexey Sobolenko",
+        "email": "alexsobolenko@gmail.com"
+    },
+    "publisher": "Alexey Sobolenko",
     "engines": {
         "vscode": "^1.96.0"
     },
     "categories": [
-        "Other"
+        "Other",
+        "Programming Languages"
+    ],
+    "keywords": [
+        "php",
+        "generator",
+        "getters",
+        "setters"
     ],
     "activationEvents": [],
     "main": "./out/extension.js",
