@@ -66,4 +66,28 @@ export default class Utils
 
         return uncommentedText;
     }
+
+    /**
+     * @param {any} element
+     * @param {number} cnt
+     * @returns {Array<any>}
+     */
+    public fillArray(element: any, cnt: number): Array<any>
+    {
+        const res = new Array(cnt);
+        res.fill(element);
+
+        return res;
+    }
+
+    /**
+     * @param {string} element
+     * @param {number} cnt
+     * @param {string} separator
+     * @returns {string}
+     */
+    public multiplyString(element: string, cnt: number, separator: string = ''): string
+    {
+        return this.fillArray(element, cnt).join(separator);
+    }
 }

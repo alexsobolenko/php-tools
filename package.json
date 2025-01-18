@@ -1,14 +1,15 @@
 {
-    "name": "php-tools",
-    "displayName": "PHP tools",
+    "name": "advanced-php-tools",
+    "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
         "email": "alexsobolenko@gmail.com"
     },
-    "publisher": "Alexey Sobolenko",
+    "icon": "assets/icon.png",
+    "publisher": "alexsobolenko",
     "engines": {
         "vscode": "^1.96.0"
     },
@@ -38,7 +39,37 @@
                 "command": "php-tools.insert-getter-setter",
                 "title": "PHP Tools. Insert getter and setter"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Advanced PHP Tools",
+            "properties": {
+                "advanced-php-tools.getter-setter-generate-phpdoc": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Generate phpdoc for getter/setter"
+                },
+                "advanced-php-tools.getter-setter-show-description": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Add description for getter/setter"
+                },
+                "advanced-php-tools.getter-setter-empty-lines-before-params": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Add empty lines before params in getter/setter phpdoc"
+                },
+                "advanced-php-tools.getter-setter-empty-lines-before-return": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Add empty lines before return in getter/setter phpdoc"
+                },
+                "advanced-php-tools.getter-setter-return-self": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Return class instance in setter instead of void"
+                }
+            }
+          }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",

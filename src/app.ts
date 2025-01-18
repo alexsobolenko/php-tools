@@ -1,4 +1,4 @@
-import {TextEditor, window} from 'vscode';
+import {TextEditor, WorkspaceConfiguration, window, workspace} from 'vscode';
 import {Action} from './interfaces';
 import Resolver, {R_GETTER, R_SETTER} from './getters-setters/resolver';
 
@@ -13,6 +13,11 @@ export default class App {
      */
     private _editor: TextEditor;
 
+    /**
+     * @type {WorkspaceConfiguration}
+     */
+    private _config: WorkspaceConfiguration
+
     private constructor() {
         if (!window.activeTextEditor) {
             throw new Error('There are no active editors.');
@@ -22,6 +27,8 @@ export default class App {
         if (this._editor.document.languageId !== 'php') {
             throw new Error('Not a PHP file.');
         }
+
+        this._config = workspace.getConfiguration('advanced-php-tools');
     }
 
     /**
@@ -40,6 +47,15 @@ export default class App {
      */
     public get editor(): TextEditor {
         return this._editor;
+    }
+
+    /**
+     * @param {string} key
+     * @param {any} defaultValue
+     * @returns {any}
+     */
+    public config(key: string, defaultValue: any = null): any {
+        return this._config.get(key, defaultValue);
     }
 
     /**

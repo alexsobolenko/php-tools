@@ -11,7 +11,7 @@ export default class Property
     /**
      * @type {string|null}
      */
-    private _indentation: string|null;
+    private _tab: string|null;
 
     /**
      * @type {string|null}
@@ -28,7 +28,7 @@ export default class Property
      */
     public constructor(name: string) {
         this._name = name;
-        this._indentation = null;
+        this._tab = null;
         this._type = null;
         this._hint = null;
     }
@@ -62,7 +62,7 @@ export default class Property
         const activeLine = editor.document.lineAt(activeLineNumber);
         const previousLineNumber = activeLineNumber - 1;
 
-        property.indentation = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
+        property.tab = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
         if (previousLineNumber <= 0) {
             return property;
         }
@@ -145,15 +145,15 @@ export default class Property
     /**
      * @returns {string}
      */
-    public get indentation(): string {
-        return this._indentation || '';
+    public get tab(): string {
+        return this._tab || '';
     }
 
     /**
-     * @param {string} indentation
+     * @param {string} tab
      */
-    public set indentation(indentation: string) {
-        this._indentation = indentation;
+    public set tab(tab: string) {
+        this._tab = tab;
     }
 
     /**
