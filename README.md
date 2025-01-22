@@ -15,3 +15,18 @@ Tools for better PHP development
 - `advanced-php-tools.getter-setter-empty-lines-before-params` - Add empty lines before params in getter/setter phpdoc (default: `0`, ignored in setter when description not shown)
 - `advanced-php-tools.getter-setter-empty-lines-before-return` - Add empty lines before return in getter/setter phpdoc (default: `0`, ignored in getter when description not shown, ignored in setter when retunrs void)
 - `advanced-php-tools.getter-setter-return-self` - Return class instance in setter instead of void (default: `false`)
+
+
+## Feature #2 - Generate class, interface, trait and enum
+
+### Available commands:
+- PHP Tools. Generate class
+- PHP Tools. Generate abstract class
+- PHP Tools. Generate final class
+- PHP Tools. Generate enum
+- PHP Tools. Generate interface
+- PHP Tools. Generate trait
+
+### Available configuration parameters:
+- `advanced-php-tools.builder-strict-types` - Generate objects with `declare(strict_types=1)` (default: `true`)
+- `advanced-php-tools.builder-generate-phpdoc` - Generate objects with phpdoc (default: `false`)

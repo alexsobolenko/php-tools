@@ -3,8 +3,8 @@ import App from '../app';
 import Utils from '../utils';
 import Property from './property';
 
-export const R_GETTER = 'getter';
-export const R_SETTER = 'setter';
+export const R_GETTER = 'r_getter';
+export const R_SETTER = 'r_setter';
 
 export default class Resolver {
     /**

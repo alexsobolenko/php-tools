@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.3] - 2024-01-22
+
+### Added
+
+- Feature #2 - generate objects
+
 ## [0.1.2] - 2024-01-18
 
 ### Added
@@ -22,4 +28,4 @@
 ### Added
 
 - Initial release
-- Getters and setters
+- Feature #1 - Getters and setters

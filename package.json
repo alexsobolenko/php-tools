@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -38,6 +38,30 @@
             {
                 "command": "php-tools.insert-getter-setter",
                 "title": "PHP Tools. Insert getter and setter"
+            },
+            {
+                "command": "php-tools.generate-class",
+                "title": "PHP Tools. Generate class"
+            },
+            {
+                "command": "php-tools.generate-abstract-class",
+                "title": "PHP Tools. Generate abstract class"
+            },
+            {
+                "command": "php-tools.generate-final-class",
+                "title": "PHP Tools. Generate final class"
+            },
+            {
+                "command": "php-tools.generate-enum",
+                "title": "PHP Tools. Generate enum"
+            },
+            {
+                "command": "php-tools.generate-interface",
+                "title": "PHP Tools. Generate interface"
+            },
+            {
+                "command": "php-tools.generate-trait",
+                "title": "PHP Tools. Generate trait"
             }
         ],
         "configuration": {
@@ -67,6 +91,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Return class instance in setter instead of void"
+                },
+                "advanced-php-tools.builder-strict-types": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Generate objects with `declare(strict_types=1)`"
+                },
+                "advanced-php-tools.builder-generate-phpdoc": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Generate objects with phpdoc"
                 }
             }
           }
