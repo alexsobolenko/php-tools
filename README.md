@@ -4,6 +4,8 @@ Tools for better PHP development
 
 ## Feature #1 - Generate getter and setter for class property
 
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/getters-setters.gif)
+
 ### Available commands:
 - PHP Tools. Insert getter
 - PHP Tools. Insert setter
@@ -18,6 +20,8 @@ Tools for better PHP development
 
 
 ## Feature #2 - Generate class, interface, trait and enum
+
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/fabric.gif)
 
 ### Available commands:
 - PHP Tools. Generate class
