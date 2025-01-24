@@ -82,6 +82,6 @@ export default class Builder {
      * @returns {any}
      */
     private config(key: string, defaultValue: any): any {
-        return App.instance.config(`getter-setter-${key}`, defaultValue);
+        return App.instance.config(`builder-${key}`, defaultValue);
     }
 }
