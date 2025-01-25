@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import {Action} from './interfaces';
+import {IAction} from './interfaces';
 import App from './app';
 
 export function activate(context: vscode.ExtensionContext) {
-    App.instance.actions().forEach((action: Action) => {
+    App.instance.actions().forEach((action: IAction) => {
         context.subscriptions.push(vscode.commands.registerCommand(action.name, action.handler));
     });
 }

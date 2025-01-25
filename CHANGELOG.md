@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.4] - 2024-01-26
+
+### Added
+
+- Feature #3 - generate PHPDoc
+
 ## [0.1.3] - 2024-01-22
 
 ### Added

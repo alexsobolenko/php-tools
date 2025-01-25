@@ -1,10 +1,11 @@
 import {TextEditor, WorkspaceConfiguration, window, workspace} from 'vscode';
 import fs from 'fs';
 import path from 'path';
-import {Action} from './interfaces';
+import {IAction} from './interfaces';
+import Utils from './utils';
 import Resolver, {R_GETTER, R_SETTER} from './getters-setters/resolver';
 import Builder, {B_ABSTRACT_CLASS, B_CLASS, B_ENUM, B_FINAL_CLASS, B_INTERFACE, B_TRAIT} from './fabric/builder';
-import Utils from './utils';
+import Documenter from './phpdoc/documenter';
 
 export default class App {
     /**
@@ -49,12 +50,14 @@ export default class App {
         const workspaceFolders = workspace.workspaceFolders;
         if (typeof workspaceFolders !== 'undefined' && workspaceFolders.length > 0) {
             this._workplacePath = workspaceFolders[0].uri.path;
-            // const composerFile = `${this._workplacePath}/composer.json`;
             const composerFile = path.join(this._workplacePath, 'composer.json');
             if (fs.existsSync(composerFile)) {
                 const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
                 const data = JSON.parse(composerFileContent);
                 this._composerData['autoload'] = data['autoload']['psr-4'];
+
+                const phpSrc = data['require']['php'] ?? null;
+                this._composerData['php-version'] = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
             }
         }
     }
@@ -103,9 +106,9 @@ export default class App {
     }
 
     /**
-     * @returns {Array<Action>}
+     * @returns {Array<IAction>}
      */
-    public actions(): Array<Action> {
+    public actions(): Array<IAction> {
         return [
             {
                 name: 'php-tools.insert-getter',
@@ -142,6 +145,10 @@ export default class App {
             {
                 name: 'php-tools.generate-trait',
                 handler: () => (new Builder()).render(B_TRAIT),
+            },
+            {
+                name: 'php-tools.generate-php-doc',
+                handler: () => (new Documenter()).render(),
             },
         ];
     }
