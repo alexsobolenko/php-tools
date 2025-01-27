@@ -24,11 +24,11 @@ export default class ConstantBlock extends Block {
             let additional = '';
             if (!constantDeclaration.includes(';')) {
                 if (constantDeclaration.endsWith('[')) {
-                    additional = '];'
-                } else if (constantDeclaration.endsWith("'")) {
-                    additional = "';"
+                    additional = '];';
+                } else if (constantDeclaration.endsWith('\'')) {
+                    additional = '\';';
                 } else if (constantDeclaration.endsWith('"')) {
-                    additional = '";'
+                    additional = '";';
                 } else {
                     additional = ';';
                 }
