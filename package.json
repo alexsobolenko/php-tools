@@ -146,7 +146,7 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
-        "test": "npx vscode-test --extensionDevelopmentPath=./ --extensionTestsPath=./out/test/suite/index.js"
+        "test": "npx vscode-test --extensionDevelopmentPath=./ --extensionTestsPath=./out/test/suite/index.js --no-sandbox --disable-gpu"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.10",
