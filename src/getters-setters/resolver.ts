@@ -33,16 +33,21 @@ export default class Resolver {
 
         Utils.instance.showInformationMessage(`Getter for property '${this.property.name}' created.`);
 
-        const generatePhpdoc = !!this.config('generate-phpdoc', true);
+        const generatePhpdoc = !!App.instance.config('getter-setter-generate-phpdoc', true);
         let phpdoc = "\n";
         if (generatePhpdoc) {
-            const showDescription = !!this.config('show-description', false);
+            const showDescription = !!App.instance.config('phpdoc-function-show-description', false);
             const description = showDescription ? `${this.property.tab} * Getter for ${this.property.name}\n` : '';
 
-            const emptyLinesBeforeReturn = showDescription ? this.config('empty-lines-before-return', 0) : 0;
-            const beforeReturn = Utils.instance.multiplyString(`${this.property.tab} *\n`, emptyLinesBeforeReturn);
+            const emptyLinesAfterDescription = showDescription
+                ? App.instance.config('phpdoc-empty-lines-after-description', 0)
+                : 0;
+            const afterDescription = Utils.instance.multiplyString(
+                `${this.property.tab} *\n`,
+                emptyLinesAfterDescription
+            );
 
-            phpdoc = `\n${this.property.tab}/**\n${description}${beforeReturn}`
+            phpdoc = `\n${this.property.tab}/**\n${description}${afterDescription}`
                 + `${this.property.tab} * @return ${this.property.hint}\n`
                 + `${this.property.tab} */\n`;
         }
@@ -62,7 +67,7 @@ export default class Resolver {
 
         Utils.instance.showInformationMessage(`Setter for property '${this.property.name}' created.`);
 
-        const returnSelf = !!this.config('return-self', false);
+        const returnSelf = !!App.instance.config('setter-return-self', false);
         let returnHint = '';
         let returnType = 'void';
         let returnInstructions = '';
@@ -72,20 +77,25 @@ export default class Resolver {
             returnInstructions = `\n${this.property.tab}${this.property.tab}return $this;\n`;
         }
 
-        const generatePhpdoc = !!this.config('generate-phpdoc', true);
+        const generatePhpdoc = !!App.instance.config('getter-setter-generate-phpdoc', true);
         let phpdoc = "\n";
 
         if (generatePhpdoc) {
-            const showDescription = !!this.config('show-description', false);
+            const showDescription = !!App.instance.config('phpdoc-function-show-description', false);
             const description = showDescription ? `${this.property.tab} * Getter for ${this.property.name}\n` : '';
 
-            const emptyLinesBeforeParams = showDescription ? this.config('empty-lines-before-params', 0) : 0;
-            const beforeParams = Utils.instance.multiplyString(`${this.property.tab} *\n`, emptyLinesBeforeParams);
+            const emptyLinesAfterDescription = showDescription
+                ? App.instance.config('phpdoc-empty-lines-after-description', 0)
+                : 0;
+            const afterDescription = Utils.instance.multiplyString(
+                `${this.property.tab} *\n`,
+                emptyLinesAfterDescription
+            );
 
-            const emptyLinesBeforeReturn = returnSelf ? this.config('empty-lines-before-return', 0) : 0;
+            const emptyLinesBeforeReturn = returnSelf ? App.instance.config('phpdoc-empty-lines-before-return', 0) : 0;
             const beforeReturn = Utils.instance.multiplyString(`${this.property.tab} *\n`, emptyLinesBeforeReturn);
 
-            phpdoc = `\n${this.property.tab}/**\n${description}${beforeParams}`
+            phpdoc = `\n${this.property.tab}/**\n${description}${afterDescription}`
                 + `${this.property.tab} * @param ${this.property.hint} $${this.property.name}\n`
                 + `${beforeReturn}${returnHint}${this.property.tab} */\n`;
         }
@@ -135,14 +145,5 @@ export default class Resolver {
             .then((error: any) => {
                 Utils.instance.showErrorMessage(`Error generating functions: ${error}`);
             });
-    }
-
-    /**
-     * @param {string} key
-     * @param {any} defaultValue
-     * @returns {any}
-     */
-    private config(key: string, defaultValue: any): any {
-        return App.instance.config(`getter-setter-${key}`, defaultValue);
     }
 }

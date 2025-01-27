@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.0] - 2024-01-27
+
+### Changed
+
+- Refactored
+
 ## [0.1.4] - 2024-01-26
 
 ### Added

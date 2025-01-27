@@ -62,10 +62,10 @@ export default class Builder {
         };
         if (!Utils.instance.hasKey(data, type)) return '';
 
-        const addStrictTypes = !!this.config('builder-strict-types', true);
+        const addStrictTypes = !!App.instance.config('builder-builder-strict-types', true);
         const strictTypes = addStrictTypes ? `declare(strict_types=1);\n\n` : '';
 
-        const addPhpdoc = !!this.config('builder-generate-phpdoc', false);
+        const addPhpdoc = !!App.instance.config('builder-generate-phpdoc', false);
         const phpdoc = addPhpdoc
             ? `/**\n * ${Utils.instance.capitalizeFirstCharTrimmed(data[type])} ${this.file.name}\n */\n`
             : '';
@@ -74,14 +74,5 @@ export default class Builder {
             + `namespace ${this.file.namespace};\n\n`
             + `${phpdoc}${data[type]} ${this.file.name}\n`
             + `{\n}\n`;
-    }
-
-    /**
-     * @param {string} key
-     * @param {any} defaultValue
-     * @returns {any}
-     */
-    private config(key: string, defaultValue: any): any {
-        return App.instance.config(`builder-${key}`, defaultValue);
     }
 }

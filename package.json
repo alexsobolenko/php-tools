@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.1.4",
+    "version": "0.2.0",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -25,7 +25,12 @@
         "php",
         "generator",
         "getters",
-        "setters"
+        "setters",
+        "phpdoc",
+        "class",
+        "interface",
+        "trait",
+        "enum"
     ],
     "activationEvents": [],
     "main": "./out/extension.js",
@@ -82,31 +87,6 @@
         "configuration": {
             "title": "Advanced PHP Tools",
             "properties": {
-                "advanced-php-tools.getter-setter-generate-phpdoc": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Generate phpdoc for getter/setter"
-                },
-                "advanced-php-tools.getter-setter-show-description": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Add description for getter/setter"
-                },
-                "advanced-php-tools.getter-setter-empty-lines-before-params": {
-                    "type": "integer",
-                    "default": 0,
-                    "description": "Add empty lines before params in getter/setter phpdoc"
-                },
-                "advanced-php-tools.getter-setter-empty-lines-before-return": {
-                    "type": "integer",
-                    "default": 0,
-                    "description": "Add empty lines before return in getter/setter phpdoc"
-                },
-                "advanced-php-tools.getter-setter-return-self": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Return class instance in setter instead of void"
-                },
                 "advanced-php-tools.builder-strict-types": {
                     "type": "boolean",
                     "default": true,
@@ -116,6 +96,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Generate objects with PHPDoc"
+                },
+                "advanced-php-tools.setter-return-self": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Return class instance in setter instead of void"
+                },
+                "advanced-php-tools.getter-setter-generate-phpdoc": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Generate phpdoc for getter/setter"
                 },
                 "advanced-php-tools.phpdoc-function-show-description": {
                     "type": "boolean",
