@@ -24,20 +24,16 @@ export default class Builder {
      * @param {string} type
      */
     public render(type: string) {
-        const template = this.template(type);
-        if (template === '') {
-            Utils.instance.showErrorMessage('Missing template to render.');
+        try {
+            const template = this.template(type);
+            if (template === '') throw new Error('Missing template to render');
 
-            return;
-        }
-
-        App.instance.editor
-            .edit((edit: TextEditorEdit) => {
+            App.instance.editor.edit((edit: TextEditorEdit) => {
                 edit.replace(new Position(0, 0), template);
-            })
-            .then((error: any) => {
-                Utils.instance.showErrorMessage(`Error generating object: ${error}`);
             });
+        } catch (error: any) {
+            Utils.instance.showErrorMessage(`Error generating object: '${error.message}'.`);
+        }
     }
 
     /**
@@ -63,7 +59,7 @@ export default class Builder {
         if (!Utils.instance.hasKey(data, type)) return '';
 
         const addStrictTypes = !!App.instance.config('builder-builder-strict-types', true);
-        const strictTypes = addStrictTypes ? `declare(strict_types=1);\n\n` : '';
+        const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
 
         const addPhpdoc = !!App.instance.config('builder-generate-phpdoc', false);
         const phpdoc = addPhpdoc
@@ -73,6 +69,6 @@ export default class Builder {
         return `<?php\n\n${strictTypes}`
             + `namespace ${this.file.namespace};\n\n`
             + `${phpdoc}${data[type]} ${this.file.name}\n`
-            + `{\n}\n`;
+            + '{\n}\n';
     }
 }

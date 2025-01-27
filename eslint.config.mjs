@@ -45,7 +45,7 @@ export default [{
         'no-new-object': 'error',
         'no-unreachable': 'error',
         'no-unneeded-ternary': 'error',
-        'no-useless-constructor': 'error',
+        'no-useless-constructor': 'off',
         'object-curly-spacing': ['error', 'never'],
         'object-shorthand': 'error',
         'one-var': ['error', 'never'],

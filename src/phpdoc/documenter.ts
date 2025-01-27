@@ -1,5 +1,5 @@
 import App from '../app';
-import {Position, TextEditorEdit} from 'vscode';
+import {Position, TextDocument, TextEditorEdit} from 'vscode';
 import {IParameter, IPHPDocHandler} from '../interfaces';
 import Block from './block/block';
 import ClassBlock from './block/class';
@@ -15,7 +15,7 @@ import {
     P_TYPE_CLASS,
     P_TYPE_CONSTANT,
     P_TYPE_FUNCTION,
-    P_TYPE_PROPERTY
+    P_TYPE_PROPERTY,
 } from './data-provider';
 
 export default class Documenter {
@@ -25,7 +25,7 @@ export default class Documenter {
     private _block: Block|null;
 
     public constructor() {
-        const document = App.instance.editor.document;
+        const document = App.instance.editor.document as TextDocument;
         const position = App.instance.editor.selection.active;
         const activeLine = document.lineAt(position.line);
         if (activeLine.text.match(P_REGEX_CLASS)) {
@@ -42,27 +42,23 @@ export default class Documenter {
     }
 
     public render() {
-        const data: IPHPDocHandler = {
-            [P_TYPE_FUNCTION]: () => this.functionTemplate(),
-            [P_TYPE_CLASS]: () => this.classTemplate(),
-            [P_TYPE_PROPERTY]: () => this.propertyTemplate(),
-            [P_TYPE_CONSTANT]: () => this.constantTemplate(),
-        };
-        const type = this._block?.type || '';
-        const template = type in data ? data[type]() : '';
-        if (template === '') {
-            Utils.instance.showErrorMessage('Missing template to render.');
+        try {
+            const data: IPHPDocHandler = {
+                [P_TYPE_FUNCTION]: () => this.functionTemplate(),
+                [P_TYPE_CLASS]: () => this.classTemplate(),
+                [P_TYPE_PROPERTY]: () => this.propertyTemplate(),
+                [P_TYPE_CONSTANT]: () => this.constantTemplate(),
+            };
+            const type = this._block?.type || '';
+            const template = type in data ? data[type]() : '';
+            if (template === '') throw new Error('Missing template to render');
 
-            return;
-        }
-
-        App.instance.editor
-            .edit((edit: TextEditorEdit) => {
+            App.instance.editor.edit((edit: TextEditorEdit) => {
                 edit.replace(new Position(this._block?.startLine || 0, 0), template);
-            })
-            .then((error: any) => {
-                Utils.instance.showErrorMessage(`Error generating phpdoc: ${error}`);
             });
+        } catch (error: any) {
+            Utils.instance.showErrorMessage(`Error generating object: '${error.message}'.`);
+        }
     }
 
     /**
@@ -81,7 +77,7 @@ export default class Documenter {
             : 0;
         const afterDescription = Utils.instance.multiplyString(`${b.tab} *\n`, emptyLinesAfterDescription);
 
-        const params = b.params.map((p: IParameter) => `${b.tab} * @param ${p.type} $${p.name}`)
+        const params = b.params.map((p: IParameter) => `${b.tab} * @param ${p.type} $${p.name}`);
 
         const returnVoid = !!App.instance.config('phpdoc-function-return-void', false);
         const returnString = (returnVoid || b.returnType !== 'void') ? `${b.tab} * @return ${b.returnType}\n` : '';
@@ -92,7 +88,7 @@ export default class Documenter {
         const beforeReturn = Utils.instance.multiplyString(`${b.tab} *\n`, emptyLinesBeforeReturn);
 
         return `${b.tab}/**\n${descriptionString}${afterDescription}`
-            + `${params.join("\n")}\n`
+            + `${params.join('\n')}\n`
             + `${beforeReturn}${returnString}${b.tab} */\n`;
     }
 

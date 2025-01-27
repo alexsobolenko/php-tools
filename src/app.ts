@@ -1,4 +1,4 @@
-import {TextEditor, WorkspaceConfiguration, window, workspace} from 'vscode';
+import {TextEditor, WorkspaceConfiguration, WorkspaceFolder, window, workspace} from 'vscode';
 import fs from 'fs';
 import path from 'path';
 import {IAction} from './interfaces';
@@ -31,7 +31,7 @@ export default class App {
     /**
      * @type {{[k: string]: any}}
      */
-    private _composerData: {[k: string]: any}
+    private _composerData: {[k: string]: any};
 
     private constructor() {
         if (!window.activeTextEditor) {
@@ -47,7 +47,7 @@ export default class App {
 
         this._workplacePath = '';
         this._composerData = {};
-        const workspaceFolders = workspace.workspaceFolders;
+        const workspaceFolders = workspace.workspaceFolders as Array<WorkspaceFolder>;
         if (typeof workspaceFolders !== 'undefined' && workspaceFolders.length > 0) {
             this._workplacePath = workspaceFolders[0].uri.path;
             const composerFile = path.join(this._workplacePath, 'composer.json');
