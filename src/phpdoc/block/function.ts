@@ -71,11 +71,9 @@ export default class FunctionBlock extends Block {
                 const argumentType = argument.type as any|null;
                 let type = 'mixed';
                 if (argumentType !== null) {
-                    if (argumentType.kind === 'uniontype') {
-                       type = argumentType.types.map((t: Name) => t.name).join('|');
-                    } else {
-                        type = argumentType.name;
-                    }
+                    type = argumentType.kind === 'uniontype'
+                        ? argumentType.types.map((t: Name) => t.name).join('|')
+                        : argumentType.name;
                 }
                 this._params.push({
                     name: (argument.name as Name).name,

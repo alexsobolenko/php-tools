@@ -24,11 +24,11 @@ export default class PropertyBlock extends Block {
             let additional = '';
             if (!propertyDeclaration.includes(';')) {
                 if (propertyDeclaration.endsWith('[')) {
-                    additional = '];'
-                } else if (propertyDeclaration.endsWith("'")) {
-                    additional = "';"
+                    additional = '];';
+                } else if (propertyDeclaration.endsWith('\'')) {
+                    additional = '\';';
                 } else if (propertyDeclaration.endsWith('"')) {
-                    additional = '";'
+                    additional = '";';
                 } else {
                     additional = ';';
                 }

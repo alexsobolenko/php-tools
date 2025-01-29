@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.2.1] - 2024-01-29
+
+### Changed
+
+- Refactored
+- Add tests
+
 ## [0.2.0] - 2024-01-27
 
 ### Changed

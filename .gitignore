@@ -1,4 +1,5 @@
 /.vscode/
+/.vscode-test/
 /node_modules/
 /out/
 /advanced-php-tools-*.vsix

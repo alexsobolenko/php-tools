@@ -26,12 +26,13 @@ export default class ClassBlock extends Block {
 
             const ast = this._phpParser.parseCode(phpCode, '');
             const types = ['class', 'enum', 'interface', 'trait'];
+            // eslint-disable-next-line max-len
             const klass = ast.children.find((node) => types.includes(node.kind)) as Class|Trait|Interface|Enum|undefined;
             if (typeof klass === 'undefined') {
                 throw new Error('Invalid PHP code.');
             }
 
-            const className = klass.name as Name
+            const className = klass.name as Name;
             this._name = className.name;
             this._kind = klass.kind;
         } catch (error: any) {

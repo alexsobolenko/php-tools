@@ -1,8 +1,7 @@
 import {window} from 'vscode';
 import App from './app';
 
-export default class Utils
-{
+export default class Utils {
     /**
      * @type {Utils}
      */
@@ -73,8 +72,7 @@ export default class Utils
      * @param {number} cnt
      * @returns {Array<any>}
      */
-    public fillArray(element: any, cnt: number): Array<any>
-    {
+    public fillArray(element: any, cnt: number): Array<any> {
         const res = new Array(cnt);
         res.fill(element);
 
@@ -87,8 +85,7 @@ export default class Utils
      * @param {string} separator
      * @returns {string}
      */
-    public multiplyString(element: string, cnt: number, separator: string = ''): string
-    {
+    public multiplyString(element: string, cnt: number, separator: string = ''): string {
         return this.fillArray(element, cnt).join(separator);
     }
 
@@ -112,7 +109,7 @@ export default class Utils
         Object.keys(autoloadData).forEach((namespaceStart) => {
             const searchString = autoloadData[namespaceStart];
             if (relativePath.startsWith(searchString)) {
-                result = relativePath.replace(searchString, namespaceStart).replaceAll('/', "\\");
+                result = relativePath.replace(searchString, namespaceStart).replaceAll('/', '\\');
             }
         });
 

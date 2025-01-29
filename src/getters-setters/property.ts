@@ -1,8 +1,7 @@
 import {Position, TextEditor} from 'vscode';
 import Utils from '../utils';
 
-export default class Property
-{
+export default class Property {
     /**
      * @type {string}
      */
@@ -67,10 +66,10 @@ export default class Property
             return property;
         }
 
-        const text = activeLine.text.split('$')[0];
+        const text = activeLine.text.split('$')[0] as string;
         const textData = text.split(' ').filter((v) => v !== '');
         if (typeof textData[1] !== 'undefined') {
-            property.type = textData[1];
+            property.type = textData[1] as string;
             property.hint = Utils.instance.convertNullable(textData[1]);
         }
 
@@ -80,10 +79,10 @@ export default class Property
             for (let line = previousLineNumber - 1; line > 0; line--) {
                 if (processed) break;
 
-                const text = editor.document.lineAt(line).text;
+                const text = editor.document.lineAt(line).text as string;
                 if (text.includes('/**') || !text.includes('*')) break;
 
-                const lineParts = text.split(' ').filter((v) => v !== '' && v !== "\t" && v !== '*');
+                const lineParts = text.split(' ').filter((v) => v !== '' && v !== '\t' && v !== '*');
                 const varPosition = lineParts.indexOf('@var');
                 if (-1 !== varPosition) {
                     processed = true;
