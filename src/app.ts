@@ -111,43 +111,43 @@ export default class App {
     public actions(): Array<IAction> {
         return [
             {
-                name: 'php-tools.insert-getter',
+                name: 'advanced-php-tools.insert-getter',
                 handler: () => (new Resolver()).render([R_GETTER]),
             },
             {
-                name: 'php-tools.insert-setter',
+                name: 'advanced-php-tools.insert-setter',
                 handler: () => (new Resolver()).render([R_SETTER]),
             },
             {
-                name: 'php-tools.insert-getter-setter',
+                name: 'advanced-php-tools.insert-getter-setter',
                 handler: () => (new Resolver()).render([R_GETTER, R_SETTER]),
             },
             {
-                name: 'php-tools.generate-class',
+                name: 'advanced-php-tools.generate-class',
                 handler: () => (new Builder()).render(B_CLASS),
             },
             {
-                name: 'php-tools.generate-abstract-class',
+                name: 'advanced-php-tools.generate-abstract-class',
                 handler: () => (new Builder()).render(B_ABSTRACT_CLASS),
             },
             {
-                name: 'php-tools.generate-final-class',
+                name: 'advanced-php-tools.generate-final-class',
                 handler: () => (new Builder()).render(B_FINAL_CLASS),
             },
             {
-                name: 'php-tools.generate-enum',
+                name: 'advanced-php-tools.generate-enum',
                 handler: () => (new Builder()).render(B_ENUM),
             },
             {
-                name: 'php-tools.generate-interface',
+                name: 'advanced-php-tools.generate-interface',
                 handler: () => (new Builder()).render(B_INTERFACE),
             },
             {
-                name: 'php-tools.generate-trait',
+                name: 'advanced-php-tools.generate-trait',
                 handler: () => (new Builder()).render(B_TRAIT),
             },
             {
-                name: 'php-tools.generate-php-doc',
+                name: 'advanced-php-tools.generate-php-doc',
                 handler: () => (new Documenter()).render(),
             },
         ];
