@@ -52,14 +52,8 @@ export default class PropertyBlock extends Block {
             }
 
             this._name = (prop.name as Name).name;
-            const t = prop.type;
-            if (t.kind === 'uniontype') {
-                t.types.forEach((t: Name) => {
-                    this._varTypes.push(t.name);
-                });
-            } else {
-                this._varTypes.push(t.name);
-            }
+            const propType = prop.type;
+            this._varTypes = propType.kind === 'uniontype' ? propType.types.map((t: Name) => t.name) : [propType.name];
         } catch (error: any) {
             Utils.instance.showErrorMessage('Failed to parse class.');
         }

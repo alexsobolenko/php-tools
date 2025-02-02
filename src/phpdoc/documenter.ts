@@ -8,6 +8,10 @@ import FunctionBlock from './block/function';
 import PropertyBlock from './block/property';
 import Utils from '../utils';
 import {
+    A_DOC_LINES_AFTER_DESCR,
+    A_DOC_LINES_BEFORE_RETURN,
+    A_DOC_RETURN_VOID,
+    A_DOC_SHOW_DESCR,
     D_REGEX_CLASS,
     D_REGEX_CONSTANT,
     D_REGEX_FUNCTION,
@@ -69,22 +73,19 @@ export default class Documenter {
 
         const b = this._block as FunctionBlock;
 
-        const showDescription = !!App.instance.config('phpdoc-function-show-description', false);
+        const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
         const descriptionString = showDescription ? `${b.tab} * ${b.name} description.\n` : '';
 
-        const emptyLinesAfterDescription = showDescription
-            ? App.instance.config('phpdoc-empty-lines-after-description', 0)
-            : 0;
+        const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
         const afterDescription = Utils.instance.multiplyString(`${b.tab} *\n`, emptyLinesAfterDescription);
 
         const params = b.params.map((p: IParameter) => `${b.tab} * @param ${p.type} $${p.name}`);
 
-        const returnVoid = !!App.instance.config('phpdoc-function-return-void', false);
+        const returnVoid = !!App.instance.config(A_DOC_RETURN_VOID, false);
         const returnString = (returnVoid || b.returnType !== 'void') ? `${b.tab} * @return ${b.returnType}\n` : '';
 
-        const emptyLinesBeforeReturn = (!returnVoid && b.returnType === 'void')
-            ? 0
-            : App.instance.config('phpdoc-empty-lines-before-return', 0);
+        // eslint-disable-next-line max-len
+        const emptyLinesBeforeReturn = (!returnVoid && b.returnType === 'void') ? 0 : App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0);
         const beforeReturn = Utils.instance.multiplyString(`${b.tab} *\n`, emptyLinesBeforeReturn);
 
         return `${b.tab}/**\n${descriptionString}${afterDescription}`
@@ -99,10 +100,9 @@ export default class Documenter {
         if (this._block === null) return '';
 
         const b = this._block as ClassBlock;
+        const name = `${Utils.instance.capitalizeFirstCharTrimmed(b.kind)} ${b.name}`;
 
-        return `${b.tab}/**\n`
-            + `${b.tab} * ${Utils.instance.capitalizeFirstCharTrimmed(b.kind)} ${b.name} description.\n`
-            + `${b.tab} */\n`;
+        return `${b.tab}/**\n${b.tab} * ${name} description.\n${b.tab} */\n`;
     }
 
     /**
@@ -113,12 +113,10 @@ export default class Documenter {
 
         const b = this._block as PropertyBlock;
 
-        const showDescription = !!App.instance.config('phpdoc-property-show-description', false);
+        const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
         const descriptionString = showDescription ? `${b.tab} * ${b.name} description.\n` : '';
 
-        const emptyLinesAfterDescription = showDescription
-            ? App.instance.config('phpdoc-empty-lines-after-description', 0)
-            : 0;
+        const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
         const afterDescription = Utils.instance.multiplyString(`${b.tab} *\n`, emptyLinesAfterDescription);
 
         return `${b.tab}/**\n${descriptionString}${afterDescription}`
@@ -134,12 +132,10 @@ export default class Documenter {
 
         const b = this._block as ConstantBlock;
 
-        const showDescription = !!App.instance.config('phpdoc-constant-show-description', false);
+        const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
         const descriptionString = showDescription ? `${b.tab} * ${b.name} description.\n` : '';
 
-        const emptyLinesAfterDescription = showDescription
-            ? App.instance.config('phpdoc-empty-lines-after-description', 0)
-            : 0;
+        const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
         const afterDescription = Utils.instance.multiplyString(`${b.tab} *\n`, emptyLinesAfterDescription);
 
         return `${b.tab}/**\n${descriptionString}${afterDescription}`
