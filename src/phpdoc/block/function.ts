@@ -2,7 +2,7 @@ import {TextEditor} from 'vscode';
 import {Class, Method, Name, Parameter} from 'php-parser';
 import {IParameter} from '../../interfaces';
 import Block from './block';
-import {P_TYPE_FUNCTION} from '../data-provider';
+import {D_TYPE_FUNCTION} from '../../constants';
 import Utils from '../../utils';
 
 export default class FunctionBlock extends Block {
@@ -22,7 +22,7 @@ export default class FunctionBlock extends Block {
     public constructor(editor: TextEditor) {
         super(editor);
 
-        this._type = P_TYPE_FUNCTION;
+        this._type = D_TYPE_FUNCTION;
         this._params = [];
         this._returnType = '';
 

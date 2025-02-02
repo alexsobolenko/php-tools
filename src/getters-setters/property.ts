@@ -1,4 +1,7 @@
-import {Position, TextEditor} from 'vscode';
+import {Position, TextDocument, TextEditor, TextLine} from 'vscode';
+import {Class, Engine, Name, PropertyStatement} from 'php-parser';
+import App from '../app';
+import {D_REGEX_CLASS, R_SETTER, R_UNDEFINED_PROPERTY} from '../constants';
 import Utils from '../utils';
 
 export default class Property {
@@ -23,80 +26,135 @@ export default class Property {
     private _hint: string|null;
 
     /**
-     * @param {string} name
+     * @type {string}
      */
-    public constructor(name: string) {
-        this._name = name;
-        this._tab = null;
-        this._type = null;
-        this._hint = null;
-    }
+    private _className: string;
+
+    /**
+     * @type {Engine}
+     */
+    protected _phpParser: Engine;
+
+    /**
+     * @type {TextEditor}
+     */
+    protected _editor: TextEditor;
+
+    /**
+     * @type {TextDocument}
+     */
+    protected _document: TextDocument;
+
+    /**
+     * @type {Position}
+     */
+    protected _position: Position;
+
+    /**
+     * @type {TextLine}
+     */
+    protected _activeLine: TextLine;
 
     /**
      * @param {TextEditor} editor
-     * @returns {Property}
      */
-    public static fromEditorSelection(editor: TextEditor): Property {
-        return Property.fromEditorPosition(editor, editor.selection.active);
-    }
+    public constructor(editor: TextEditor) {
+        this._editor = editor;
+        this._document = this._editor.document;
+        this._position = this._editor.selection.active;
+        this._activeLine = this._document.lineAt(this._position.line);
+        this._tab = this._activeLine.text.substring(0, this._activeLine.firstNonWhitespaceCharacterIndex);
+        this._className = 'self';
 
-    /**
-     * @param {TextEditor} editor
-     * @param {Position} activePosition
-     * @returns {Property}
-     */
-    public static fromEditorPosition(editor: TextEditor, activePosition: Position): Property {
-        const wordRange = editor.document.getWordRangeAtPosition(activePosition);
-        if (wordRange === undefined) {
-            throw new Error('No property found. Please select a property to use this extension.');
-        }
-
-        const selectedWord = editor.document.getText(wordRange);
-        if (selectedWord[0] !== '$') {
-            throw new Error('No property found. Please select a property to use this extension.');
-        }
-
-        const property = new Property(selectedWord.substring(1, selectedWord.length));
-        const activeLineNumber = activePosition.line;
-        const activeLine = editor.document.lineAt(activeLineNumber);
-        const previousLineNumber = activeLineNumber - 1;
-
-        property.tab = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
-        if (previousLineNumber <= 0) {
-            return property;
-        }
-
-        const text = activeLine.text.split('$')[0] as string;
-        const textData = text.split(' ').filter((v) => v !== '');
-        if (typeof textData[1] !== 'undefined') {
-            property.type = textData[1] as string;
-            property.hint = Utils.instance.convertNullable(textData[1]);
-        }
-
-        const previousLine = editor.document.lineAt(previousLineNumber);
-        if (previousLine.text.endsWith('*/')) {
-            let processed = false;
-            for (let line = previousLineNumber - 1; line > 0; line--) {
-                if (processed) break;
-
-                const text = editor.document.lineAt(line).text as string;
-                if (text.includes('/**') || !text.includes('*')) break;
-
-                const lineParts = text.split(' ').filter((v) => v !== '' && v !== '\t' && v !== '*');
-                const varPosition = lineParts.indexOf('@var');
-                if (-1 !== varPosition) {
-                    processed = true;
-                    const type = lineParts[varPosition + 1];
-                    property.hint = Utils.instance.convertNullable(type);
-                    if (!property.type) {
-                        property.type = type;
-                    }
-                    continue;
+        for (let i = 0; i < this._position.line; i++) {
+            const text = this._document.lineAt(i).text as string;
+            if (text.includes('class')) {
+                const matches = this._document.lineAt(i).text.match(D_REGEX_CLASS);
+                if (matches && matches.length > 2) {
+                    this._className = matches[2] as string;
                 }
             }
         }
 
-        return property;
+        this._phpParser = new Engine({
+            parser: {
+                extractDoc: true,
+                version: App.instance.composer('php-version', '7.4'),
+            },
+            ast: {
+                withPositions: true,
+            },
+        });
+
+        try {
+            const propertyDeclaration = this._activeLine.text.trim();
+            let additional = '';
+            if (!propertyDeclaration.includes(';')) {
+                if (propertyDeclaration.endsWith('[')) {
+                    additional = '];';
+                } else if (propertyDeclaration.endsWith('\'')) {
+                    additional = '\';';
+                } else if (propertyDeclaration.endsWith('"')) {
+                    additional = '";';
+                } else {
+                    additional = ';';
+                }
+            }
+            const phpCode = `<?php \n class Foo { \n ${propertyDeclaration} ${additional} \n } \n`;
+
+            const ast = this._phpParser.parseCode(phpCode, '');
+            const klass = ast.children.find((node) => node.kind === 'class') as Class|undefined;
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid PHP code.');
+            }
+
+            const stmt = klass.body.find((node) => node.kind === 'propertystatement') as PropertyStatement|undefined;
+            if (typeof stmt === 'undefined') {
+                throw new Error('Invalid PHP code.');
+            }
+
+            const prop = stmt.properties.find((node) => node.kind === 'property') as any;
+            if (typeof prop === 'undefined') {
+                throw new Error('Invalid PHP code.');
+            }
+
+            this._name = (prop.name as Name).name;
+
+            const varTypes: Array<string> = prop.type.kind === 'uniontype'
+                ? prop.type.types.map((t: Name) => t.name)
+                : [prop.type.name];
+
+            const joinedVarTypes = varTypes.join('|');
+            this._hint = joinedVarTypes;
+            const index = varTypes.indexOf('null');
+            if (index === -1) {
+                this._type = joinedVarTypes;
+            } else {
+                varTypes.splice(index, 1);
+                this._type = `?${varTypes.join('|')}`;
+            }
+        } catch (error: any) {
+            this._name = R_UNDEFINED_PROPERTY;
+            this._type = null;
+            this._hint = null;
+            Utils.instance.showErrorMessage(`Failed to parse property: ${error}`);
+        }
+    }
+
+    /**
+     * @param {string} type
+     * @returns {string}
+     */
+    public getFunction(type: string): string {
+        const name = Utils.instance.capitalizeFirstCharTrimmed(this._name);
+        switch (true) {
+            case (type === R_SETTER):
+                return `set${name}`;
+            case (['bool', 'boolean'].includes(this._hint ?? '')):
+                return `is${name}`;
+            default:
+                return `get${name}`;
+        }
     }
 
     /**
@@ -107,24 +165,10 @@ export default class Property {
     }
 
     /**
-     * @param {string} name
-     */
-    public set name(name: string) {
-        this._name = name;
-    }
-
-    /**
      * @returns {string}
      */
     public get type(): string {
         return this._type || 'mixed';
-    }
-
-    /**
-     * @param {string} type
-     */
-    public set type(type: string) {
-        this._type = type;
     }
 
     /**
@@ -135,13 +179,6 @@ export default class Property {
     }
 
     /**
-     * @param {string} hint
-     */
-    public set hint(hint: string) {
-        this._hint = hint;
-    }
-
-    /**
      * @returns {string}
      */
     public get tab(): string {
@@ -149,31 +186,9 @@ export default class Property {
     }
 
     /**
-     * @param {string} tab
-     */
-    public set tab(tab: string) {
-        this._tab = tab;
-    }
-
-    /**
      * @returns {string}
      */
-    public getterName(): string {
-        return this.generateMethodName('get');
-    }
-
-    /**
-     * @returns {string}
-     */
-    public setterName(): string {
-        return this.generateMethodName('set');
-    }
-
-    /**
-     * @param {string} prefix
-     * @returns {string}
-     */
-    private generateMethodName(prefix: string): string {
-        return prefix + this.name.charAt(0).toUpperCase() + this.name.substring(1);
+    public get className(): string {
+        return this._className;
     }
 }
