@@ -32,6 +32,16 @@ export const R_SETTER = 'r_setter';
 
 export const R_UNDEFINED_PROPERTY = '__undefined__';
 
+/* fabric */
+export const F_CLASS = 'b_class';
+export const F_ABSTRACT_CLASS = 'b_abstract_class';
+export const F_FINAL_CLASS = 'b_final_class';
+export const F_INTERFACE = 'b_interface';
+export const F_TRAIT = 'b_trait';
+export const F_ENUM = 'b_enum';
+
+export const F_UNDEFINED_TYPE = '__undefined__';
+
 /* phpdoc */
 export const D_TYPE_FUNCTION = 'function';
 // eslint-disable-next-line max-len

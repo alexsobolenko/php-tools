@@ -2,13 +2,11 @@ import {Position, TextEditorEdit} from 'vscode';
 import App from '../app';
 import Utils from '../utils';
 import File from './file';
-
-export const B_CLASS = 'b_class';
-export const B_ABSTRACT_CLASS = 'b_abstract_class';
-export const B_FINAL_CLASS = 'b_final_class';
-export const B_INTERFACE = 'b_interface';
-export const B_TRAIT = 'b_trait';
-export const B_ENUM = 'b_enum';
+import {
+    A_FAB_GENERATE_PHPDOC,
+    A_FAB_STRICT_TYPES,
+    F_UNDEFINED_TYPE,
+} from '../constants';
 
 export default class Builder {
     /**
@@ -16,17 +14,19 @@ export default class Builder {
      */
     private _file: File;
 
-    constructor() {
-        this._file = new File(App.instance.editor);
-    }
-
     /**
      * @param {string} type
      */
-    public render(type: string) {
+    constructor(type: string) {
+        this._file = new File(App.instance.editor, type);
+    }
+
+    public render() {
         try {
-            const template = this.template(type);
-            if (template === '') throw new Error('Missing template to render');
+            const template = this.template();
+            if (template === '') {
+                throw new Error('Missing template to render');
+            }
 
             App.instance.editor.edit((edit: TextEditorEdit) => {
                 edit.replace(new Position(0, 0), template);
@@ -37,38 +37,25 @@ export default class Builder {
     }
 
     /**
-     * @returns {File}
-     */
-    public get file(): File {
-        return this._file;
-    }
-
-    /**
-     * @param {string} type
      * @returns {string}
      */
-    private template(type: string): string {
-        const data = {
-            [B_ABSTRACT_CLASS]: 'abstract class',
-            [B_CLASS]: 'class',
-            [B_ENUM]: 'enum',
-            [B_INTERFACE]: 'interface',
-            [B_FINAL_CLASS]: 'final class',
-            [B_TRAIT]: 'trait',
-        };
-        if (!Utils.instance.hasKey(data, type)) return '';
+    private template(): string {
+        const keyword = this._file.keyword as string;
+        let result = '';
+        if (keyword !== F_UNDEFINED_TYPE) {
+            const addStrictTypes = !!App.instance.config(A_FAB_STRICT_TYPES, true);
+            const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
 
-        const addStrictTypes = !!App.instance.config('builder-builder-strict-types', true);
-        const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
+            const addPhpdoc = !!App.instance.config(A_FAB_GENERATE_PHPDOC, false);
+            const name = `${Utils.instance.capitalizeFirstCharTrimmed(keyword)} ${this._file.name}`;
+            const phpdoc = addPhpdoc ? `/**\n * ${name}\n */\n` : '';
 
-        const addPhpdoc = !!App.instance.config('builder-generate-phpdoc', false);
-        const phpdoc = addPhpdoc
-            ? `/**\n * ${Utils.instance.capitalizeFirstCharTrimmed(data[type])} ${this.file.name}\n */\n`
-            : '';
+            result = `<?php\n\n${strictTypes}`
+                + `namespace ${this._file.namespace};\n\n`
+                + `${phpdoc}${keyword} ${this._file.name}\n`
+                + '{\n}\n';
+        }
 
-        return `<?php\n\n${strictTypes}`
-            + `namespace ${this.file.namespace};\n\n`
-            + `${phpdoc}${data[type]} ${this.file.name}\n`
-            + '{\n}\n';
+        return result;
     }
 }

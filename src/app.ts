@@ -4,7 +4,7 @@ import path from 'path';
 import {IAction} from './interfaces';
 import Utils from './utils';
 import Resolver from './getters-setters/resolver';
-import Builder, {B_ABSTRACT_CLASS, B_CLASS, B_ENUM, B_FINAL_CLASS, B_INTERFACE, B_TRAIT} from './fabric/builder';
+import Builder from './fabric/builder';
 import Documenter from './phpdoc/documenter';
 import {
     CMD_GENERATE_ABSTRACT_CLASS,
@@ -17,6 +17,12 @@ import {
     CMD_INSERT_GETTER,
     CMD_INSERT_GETTER_SETTER,
     CMD_INSERT_SETTER,
+    F_ABSTRACT_CLASS,
+    F_CLASS,
+    F_ENUM,
+    F_FINAL_CLASS,
+    F_INTERFACE,
+    F_TRAIT,
     R_GETTER,
     R_SETTER,
 } from './constants';
@@ -138,27 +144,27 @@ export default class App {
             },
             {
                 name: CMD_GENERATE_CLASS,
-                handler: () => (new Builder()).render(B_CLASS),
+                handler: () => (new Builder(F_CLASS)).render(),
             },
             {
                 name: CMD_GENERATE_ABSTRACT_CLASS,
-                handler: () => (new Builder()).render(B_ABSTRACT_CLASS),
+                handler: () => (new Builder(F_ABSTRACT_CLASS)).render(),
             },
             {
                 name: CMD_GENERATE_FINAL_CLASS,
-                handler: () => (new Builder()).render(B_FINAL_CLASS),
+                handler: () => (new Builder(F_FINAL_CLASS)).render(),
             },
             {
                 name: CMD_GENERATE_ENUM,
-                handler: () => (new Builder()).render(B_ENUM),
+                handler: () => (new Builder(F_ENUM)).render(),
             },
             {
                 name: CMD_GENERATE_INTERFACE,
-                handler: () => (new Builder()).render(B_INTERFACE),
+                handler: () => (new Builder(F_INTERFACE)).render(),
             },
             {
                 name: CMD_GENERATE_TRAIT,
-                handler: () => (new Builder()).render(B_TRAIT),
+                handler: () => (new Builder(F_TRAIT)).render(),
             },
             {
                 name: CMD_GENERATE_PHPDOC,
