@@ -29,7 +29,6 @@ export default class FunctionBlock extends Block {
         const lines = [];
         while (this._startLine >= 0) {
             const line = this._document.lineAt(this._startLine).text.trim();
-
             if (line.includes('function')) {
                 lines.unshift(line);
                 break;
@@ -68,16 +67,14 @@ export default class FunctionBlock extends Block {
             const functionName = func.name as Name;
             this._name = functionName.name;
             func.arguments.forEach((argument: Parameter) => {
-                const argumentType = argument.type as any|null;
-                let type = 'mixed';
-                if (argumentType !== null) {
-                    type = argumentType.kind === 'uniontype'
-                        ? argumentType.types.map((t: Name) => t.name).join('|')
-                        : argumentType.name;
+                const t = argument.type as any|null;
+                let paramType = 'mixed';
+                if (t !== null) {
+                    paramType = t.kind === 'uniontype' ? t.types.map((t: Name) => t.name).join('|') : t.name;
                 }
                 this._params.push({
                     name: (argument.name as Name).name,
-                    type,
+                    type: paramType,
                 });
             });
             this._returnType = func.type ? func.type.name : 'void';
