@@ -1,5 +1,14 @@
 import {TextEditor} from 'vscode';
 import Utils from '../utils';
+import {
+    F_ABSTRACT_CLASS,
+    F_CLASS,
+    F_ENUM,
+    F_FINAL_CLASS,
+    F_INTERFACE,
+    F_TRAIT,
+    F_UNDEFINED_TYPE,
+} from '../constants';
 
 export default class File {
     /**
@@ -12,10 +21,16 @@ export default class File {
      */
     private _namespace: string;
 
-    public constructor(editor: TextEditor) {
+    /**
+     * @type {string}
+     */
+    private _type: string;
+
+    public constructor(editor: TextEditor, type: string) {
         const nameData = Utils.instance.splitPath(editor.document.fileName);
         this._namespace = Utils.instance.pathToNamespace(nameData[0]);
         this._name = nameData[1].replace('.php', '');
+        this._type = type;
     }
 
     /**
@@ -26,13 +41,6 @@ export default class File {
     }
 
     /**
-     * @param {string} name
-     */
-    public set name(name: string) {
-        this._name = name;
-    }
-
-    /**
      * @returns {string}
      */
     public get namespace(): string {
@@ -40,9 +48,25 @@ export default class File {
     }
 
     /**
-     * @param {string} namespace
+     * @returns {string}
      */
-    public set namespace(namespace: string) {
-        this._namespace = namespace;
+    public get type(): string {
+        return this._type;
+    }
+
+    /**
+     * @returns {string}
+     */
+    public get keyword(): string {
+        const data = {
+            [F_ABSTRACT_CLASS]: 'abstract class',
+            [F_CLASS]: 'class',
+            [F_ENUM]: 'enum',
+            [F_INTERFACE]: 'interface',
+            [F_FINAL_CLASS]: 'final class',
+            [F_TRAIT]: 'trait',
+        };
+
+        return Utils.instance.hasKey(data, this._type) ? data[this._type] : F_UNDEFINED_TYPE;
     }
 }
