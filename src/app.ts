@@ -3,9 +3,23 @@ import fs from 'fs';
 import path from 'path';
 import {IAction} from './interfaces';
 import Utils from './utils';
-import Resolver, {R_GETTER, R_SETTER} from './getters-setters/resolver';
+import Resolver from './getters-setters/resolver';
 import Builder, {B_ABSTRACT_CLASS, B_CLASS, B_ENUM, B_FINAL_CLASS, B_INTERFACE, B_TRAIT} from './fabric/builder';
 import Documenter from './phpdoc/documenter';
+import {
+    CMD_GENERATE_ABSTRACT_CLASS,
+    CMD_GENERATE_CLASS,
+    CMD_GENERATE_ENUM,
+    CMD_GENERATE_FINAL_CLASS,
+    CMD_GENERATE_INTERFACE,
+    CMD_GENERATE_PHPDOC,
+    CMD_GENERATE_TRAIT,
+    CMD_INSERT_GETTER,
+    CMD_INSERT_GETTER_SETTER,
+    CMD_INSERT_SETTER,
+    R_GETTER,
+    R_SETTER,
+} from './constants';
 
 export default class App {
     /**
@@ -111,43 +125,43 @@ export default class App {
     public actions(): Array<IAction> {
         return [
             {
-                name: 'advanced-php-tools.insert-getter',
+                name: CMD_INSERT_GETTER,
                 handler: () => (new Resolver()).render([R_GETTER]),
             },
             {
-                name: 'advanced-php-tools.insert-setter',
+                name: CMD_INSERT_SETTER,
                 handler: () => (new Resolver()).render([R_SETTER]),
             },
             {
-                name: 'advanced-php-tools.insert-getter-setter',
+                name: CMD_INSERT_GETTER_SETTER,
                 handler: () => (new Resolver()).render([R_GETTER, R_SETTER]),
             },
             {
-                name: 'advanced-php-tools.generate-class',
+                name: CMD_GENERATE_CLASS,
                 handler: () => (new Builder()).render(B_CLASS),
             },
             {
-                name: 'advanced-php-tools.generate-abstract-class',
+                name: CMD_GENERATE_ABSTRACT_CLASS,
                 handler: () => (new Builder()).render(B_ABSTRACT_CLASS),
             },
             {
-                name: 'advanced-php-tools.generate-final-class',
+                name: CMD_GENERATE_FINAL_CLASS,
                 handler: () => (new Builder()).render(B_FINAL_CLASS),
             },
             {
-                name: 'advanced-php-tools.generate-enum',
+                name: CMD_GENERATE_ENUM,
                 handler: () => (new Builder()).render(B_ENUM),
             },
             {
-                name: 'advanced-php-tools.generate-interface',
+                name: CMD_GENERATE_INTERFACE,
                 handler: () => (new Builder()).render(B_INTERFACE),
             },
             {
-                name: 'advanced-php-tools.generate-trait',
+                name: CMD_GENERATE_TRAIT,
                 handler: () => (new Builder()).render(B_TRAIT),
             },
             {
-                name: 'advanced-php-tools.generate-php-doc',
+                name: CMD_GENERATE_PHPDOC,
                 handler: () => (new Documenter()).render(),
             },
         ];

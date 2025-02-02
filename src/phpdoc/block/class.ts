@@ -1,7 +1,7 @@
 import {TextEditor} from 'vscode';
 import {Class, Enum, Interface, Name, Trait} from 'php-parser';
 import Block from './block';
-import {P_TYPE_CLASS} from '../data-provider';
+import {D_TYPE_CLASS} from '../../constants';
 import Utils from '../../utils';
 
 export default class ClassBlock extends Block {
@@ -16,7 +16,7 @@ export default class ClassBlock extends Block {
     public constructor(editor: TextEditor) {
         super(editor);
 
-        this._type = P_TYPE_CLASS;
+        this._type = D_TYPE_CLASS;
         this._kind = '';
 
         try {

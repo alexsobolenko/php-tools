@@ -8,15 +8,15 @@ import FunctionBlock from './block/function';
 import PropertyBlock from './block/property';
 import Utils from '../utils';
 import {
-    P_REGEX_CLASS,
-    P_REGEX_CONSTANT,
-    P_REGEX_FUNCTION,
-    P_REGEX_PROPERTY,
-    P_TYPE_CLASS,
-    P_TYPE_CONSTANT,
-    P_TYPE_FUNCTION,
-    P_TYPE_PROPERTY,
-} from './data-provider';
+    D_REGEX_CLASS,
+    D_REGEX_CONSTANT,
+    D_REGEX_FUNCTION,
+    D_REGEX_PROPERTY,
+    D_TYPE_CLASS,
+    D_TYPE_CONSTANT,
+    D_TYPE_FUNCTION,
+    D_TYPE_PROPERTY,
+} from '../constants';
 
 export default class Documenter {
     /**
@@ -28,13 +28,13 @@ export default class Documenter {
         const document = App.instance.editor.document as TextDocument;
         const position = App.instance.editor.selection.active;
         const activeLine = document.lineAt(position.line);
-        if (activeLine.text.match(P_REGEX_CLASS)) {
+        if (activeLine.text.match(D_REGEX_CLASS)) {
             this._block = new ClassBlock(App.instance.editor);
-        } else if (activeLine.text.match(P_REGEX_PROPERTY)) {
+        } else if (activeLine.text.match(D_REGEX_PROPERTY)) {
             this._block = new PropertyBlock(App.instance.editor);
-        } else if (activeLine.text.match(P_REGEX_CONSTANT)) {
+        } else if (activeLine.text.match(D_REGEX_CONSTANT)) {
             this._block = new ConstantBlock(App.instance.editor);
-        } else if (activeLine.text.match(P_REGEX_FUNCTION)) {
+        } else if (activeLine.text.match(D_REGEX_FUNCTION)) {
             this._block = new FunctionBlock(App.instance.editor);
         } else {
             this._block = null;
@@ -44,10 +44,10 @@ export default class Documenter {
     public render() {
         try {
             const data: IPHPDocHandler = {
-                [P_TYPE_FUNCTION]: () => this.functionTemplate(),
-                [P_TYPE_CLASS]: () => this.classTemplate(),
-                [P_TYPE_PROPERTY]: () => this.propertyTemplate(),
-                [P_TYPE_CONSTANT]: () => this.constantTemplate(),
+                [D_TYPE_FUNCTION]: () => this.functionTemplate(),
+                [D_TYPE_CLASS]: () => this.classTemplate(),
+                [D_TYPE_PROPERTY]: () => this.propertyTemplate(),
+                [D_TYPE_CONSTANT]: () => this.constantTemplate(),
             };
             const type = this._block?.type || '';
             const template = type in data ? data[type]() : '';

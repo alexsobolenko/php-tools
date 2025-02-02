@@ -6,7 +6,8 @@
         "lib": ["ES2022"],
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "strict": true
+        "strict": true,
+        "sourceMap": true
     },
     "include": [
       "src/**/*.ts",

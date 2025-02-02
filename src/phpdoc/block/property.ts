@@ -1,7 +1,7 @@
 import {TextEditor} from 'vscode';
 import {Class, Name, PropertyStatement} from 'php-parser';
 import Block from './block';
-import {P_TYPE_PROPERTY} from '../data-provider';
+import {D_TYPE_PROPERTY} from '../../constants';
 import Utils from '../../utils';
 
 export default class PropertyBlock extends Block {
@@ -16,7 +16,7 @@ export default class PropertyBlock extends Block {
     public constructor(editor: TextEditor) {
         super(editor);
 
-        this._type = P_TYPE_PROPERTY;
+        this._type = D_TYPE_PROPERTY;
         this._varTypes = [];
 
         try {

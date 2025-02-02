@@ -1,7 +1,7 @@
 import {TextEditor} from 'vscode';
 import {Class, ClassConstant, Name} from 'php-parser';
 import Block from './block';
-import {P_REGEX_CONSTANT, P_TYPE_CONSTANT} from '../data-provider';
+import {D_TYPE_CONSTANT, D_REGEX_CONSTANT} from '../../constants';
 import Utils from '../../utils';
 
 export default class ConstantBlock extends Block {
@@ -16,7 +16,7 @@ export default class ConstantBlock extends Block {
     public constructor(editor: TextEditor) {
         super(editor);
 
-        this._type = P_TYPE_CONSTANT;
+        this._type = D_TYPE_CONSTANT;
         this._constType = null;
 
         try {
@@ -52,7 +52,7 @@ export default class ConstantBlock extends Block {
             }
 
             this._name = (konst.name as Name).name;
-            const m = constantDeclaration.match(P_REGEX_CONSTANT) as Array<string>|null;
+            const m = constantDeclaration.match(D_REGEX_CONSTANT) as Array<string>|null;
             if (m !== null && m.length >= 3) {
                 this._constType = /^[A-Z]+$/.test(m[2]) ? 'mixed' : m[2];
             }
