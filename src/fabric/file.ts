@@ -1,14 +1,6 @@
-import {TextEditor} from 'vscode';
+import App from '../app';
 import Utils from '../utils';
-import {
-    F_ABSTRACT_CLASS,
-    F_CLASS,
-    F_ENUM,
-    F_FINAL_CLASS,
-    F_INTERFACE,
-    F_TRAIT,
-    F_UNDEFINED_TYPE,
-} from '../constants';
+import {F_ABSTRACT_CLASS, F_CLASS, F_ENUM, F_FINAL_CLASS, F_INTERFACE, F_TRAIT, F_UNDEFINED_TYPE} from '../constants';
 
 export default class File {
     /**
@@ -26,8 +18,11 @@ export default class File {
      */
     private _type: string;
 
-    public constructor(editor: TextEditor, type: string) {
-        const nameData = Utils.instance.splitPath(editor.document.fileName);
+    /**
+     * @param {string} type
+     */
+    public constructor(type: string) {
+        const nameData = Utils.instance.splitPath(App.instance.editor.document.fileName);
         this._namespace = Utils.instance.pathToNamespace(nameData[0]);
         this._name = nameData[1].replace('.php', '');
         this._type = type;
@@ -45,13 +40,6 @@ export default class File {
      */
     public get namespace(): string {
         return this._namespace;
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get type(): string {
-        return this._type;
     }
 
     /**

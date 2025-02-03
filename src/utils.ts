@@ -1,5 +1,6 @@
 import {window} from 'vscode';
 import App from './app';
+import {M_ERROR, M_INFO, M_WARNING} from './constants';
 
 export default class Utils {
     /**
@@ -21,50 +22,20 @@ export default class Utils {
     }
 
     /**
-     * @param {string} message
-     */
-    public showErrorMessage(message: string): void {
-        window.showErrorMessage(message.replace(/\$\(.+?\)\s\s/, ''));
-    }
-
-    /**
-     * @param {string} message
-     */
-    public showInformationMessage(message: string): void {
-        window.showInformationMessage(message.replace(/\$\(.+?\)\s\s/, ''));
-    }
-
-    /**
+     * @param {string} buffer
      * @param {string} type
-     * @returns {string}
      */
-    public convertNullable(type: string): string {
-        return type.startsWith('?') ? `${type.substring(1)}|null` : type;
-    }
-
-    /**
-     * @param {string} text
-     * @returns {string}
-     */
-    public stripComments(text: string): string {
-        let uncommentedText = '';
-        let index = 0;
-        while (index !== text.length) {
-            if ((text.charAt(index) === '/') && (text.charAt(index + 1) === '*')) {
-                if ((index + 2) !== text.length) {
-                    index += 2;
-                    while ((text.charAt(index) !== '*') && (text.charAt(index + 1) !== '/')) index++;
-                }
-                index += 2;
-            } else if ((text.charAt(index) === '/') && (text.charAt(index + 1) === '/')) {
-                while ((text.charAt(index) !== '\n') && (index < text.length)) index++;
-            } else {
-                uncommentedText = uncommentedText + text.charAt(index);
-                index++;
-            }
+    public showMessage(buffer: string, type: string = 'info') {
+        const message = buffer.replace(/\$\(.+?\)\s\s/, '');
+        const data = [M_ERROR, M_INFO, M_WARNING];
+        const fcn = data.includes(type) ? type : M_INFO;
+        if (fcn === M_ERROR) {
+            window.showErrorMessage(message);
+        } else if (fcn === M_WARNING) {
+            window.showWarningMessage(message);
+        } else {
+            window.showInformationMessage(message);
         }
-
-        return uncommentedText;
     }
 
     /**

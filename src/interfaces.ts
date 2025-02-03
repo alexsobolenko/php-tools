@@ -5,7 +5,7 @@ export interface IAction {
 
 export interface IParameter {
     name: string;
-    type: string;
+    hint: string;
 }
 
 export interface IPHPDocHandler {

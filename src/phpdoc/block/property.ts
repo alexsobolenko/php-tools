@@ -1,68 +1,68 @@
-import {TextEditor} from 'vscode';
 import {Class, Name, PropertyStatement} from 'php-parser';
 import Block from './block';
-import {D_TYPE_PROPERTY} from '../../constants';
+import App from '../../app';
 import Utils from '../../utils';
+import {A_DOC_LINES_AFTER_DESCR, A_DOC_SHOW_DESCR, D_TYPE_PROPERTY, M_ERROR} from '../../constants';
 
 export default class PropertyBlock extends Block {
     /**
-     * @type {Array<string>}
+     * @type {string}
      */
-    private _varTypes: Array<string>;
+    private _varHint: string;
 
-    /**
-     * @param {TextEditor} editor
-     */
-    public constructor(editor: TextEditor) {
-        super(editor);
+    public constructor() {
+        super();
 
         this._type = D_TYPE_PROPERTY;
-        this._varTypes = [];
 
         try {
-            const propertyDeclaration = this._activeLine.text.trim();
-            let additional = '';
-            if (!propertyDeclaration.includes(';')) {
-                if (propertyDeclaration.endsWith('[')) {
-                    additional = '];';
-                } else if (propertyDeclaration.endsWith('\'')) {
-                    additional = '\';';
-                } else if (propertyDeclaration.endsWith('"')) {
-                    additional = '";';
+            let declr = this._activeLine.text.trim();
+            if (!declr.includes(';')) {
+                if (declr.endsWith('[')) {
+                    declr = `${declr}];`;
+                } else if (declr.endsWith('\'')) {
+                    declr = `${declr}';`;
+                } else if (declr.endsWith('"')) {
+                    declr = `${declr}";`;
                 } else {
-                    additional = ';';
+                    declr = `${declr};`;
                 }
             }
-            const phpCode = `<?php \n class Foo { \n ${propertyDeclaration} ${additional} \n } \n`;
+            const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
-            const ast = this._phpParser.parseCode(phpCode, '');
-            const klass = ast.children.find((node) => node.kind === 'class') as Class|undefined;
-            if (typeof klass === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
+            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const stmt = klass.body.find((node) => node.kind === 'propertystatement') as PropertyStatement|undefined;
-            if (typeof stmt === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            if (typeof stmt === 'undefined') throw new Error('Invalid PHP code');
 
             const prop = stmt.properties.find((node) => node.kind === 'property') as any;
-            if (typeof prop === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            if (typeof prop === 'undefined') throw new Error('Invalid PHP code');
 
             this._name = (prop.name as Name).name;
-            const propType = prop.type;
-            this._varTypes = propType.kind === 'uniontype' ? propType.types.map((t: Name) => t.name) : [propType.name];
+
+            const types = prop.type.kind === 'uniontype' ? prop.type.types.map((t: Name) => t.name) : [prop.type.name];
+            if (prop.nullable && !types.includes('null')) types.push('null');
+
+            this._varHint = types.join('|');
         } catch (error: any) {
-            Utils.instance.showErrorMessage('Failed to parse class.');
+            this._varHint = 'mixed';
+            Utils.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
     /**
-     * @returns {Array<string>}
+     * @returns {string}
      */
-    public get varTypes(): Array<string> {
-        return this._varTypes;
+    public get template(): string {
+        const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
+        const descriptionString = showDescription ? `${this._tab} * ${this._name} description.\n` : '';
+
+        const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
+        const afterDescription = Utils.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
+
+        return `${this._tab}/**\n${descriptionString}${afterDescription}`
+            + `${this._tab} * @var ${this._varHint}\n`
+            + `${this._tab} */\n`;
     }
 }

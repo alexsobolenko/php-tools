@@ -1,8 +1,7 @@
-import {Position, TextDocument, TextEditor, TextLine} from 'vscode';
 import {Class, Engine, Name, PropertyStatement} from 'php-parser';
 import App from '../app';
-import {D_REGEX_CLASS, R_SETTER, R_UNDEFINED_PROPERTY} from '../constants';
 import Utils from '../utils';
+import {D_REGEX_CLASS, M_ERROR, R_SETTER, R_UNDEFINED_PROPERTY} from '../constants';
 
 export default class Property {
     /**
@@ -30,99 +29,50 @@ export default class Property {
      */
     private _className: string;
 
-    /**
-     * @type {Engine}
-     */
-    protected _phpParser: Engine;
+    public constructor() {
+        const position = App.instance.editor.selection.active;
+        const activeLine = App.instance.editor.document.lineAt(position.line);
 
-    /**
-     * @type {TextEditor}
-     */
-    protected _editor: TextEditor;
-
-    /**
-     * @type {TextDocument}
-     */
-    protected _document: TextDocument;
-
-    /**
-     * @type {Position}
-     */
-    protected _position: Position;
-
-    /**
-     * @type {TextLine}
-     */
-    protected _activeLine: TextLine;
-
-    /**
-     * @param {TextEditor} editor
-     */
-    public constructor(editor: TextEditor) {
-        this._editor = editor;
-        this._document = this._editor.document;
-        this._position = this._editor.selection.active;
-        this._activeLine = this._document.lineAt(this._position.line);
-        this._tab = this._activeLine.text.substring(0, this._activeLine.firstNonWhitespaceCharacterIndex);
+        this._tab = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
         this._className = 'self';
 
-        for (let i = 0; i < this._position.line; i++) {
-            const text = this._document.lineAt(i).text as string;
+        for (let i = 0; i < position.line; i++) {
+            const text = App.instance.editor.document.lineAt(i).text as string;
             if (text.includes('class')) {
-                const matches = this._document.lineAt(i).text.match(D_REGEX_CLASS);
-                if (matches && matches.length > 2) {
-                    this._className = matches[2] as string;
-                }
+                const matches = App.instance.editor.document.lineAt(i).text.match(D_REGEX_CLASS);
+                if (matches && matches.length > 2) this._className = matches[2] as string;
             }
         }
 
-        this._phpParser = new Engine({
-            parser: {
-                extractDoc: true,
-                version: App.instance.composer('php-version', '7.4'),
-            },
-            ast: {
-                withPositions: true,
-            },
-        });
-
         try {
-            const propertyDeclaration = this._activeLine.text.trim();
-            let additional = '';
-            if (!propertyDeclaration.includes(';')) {
-                if (propertyDeclaration.endsWith('[')) {
-                    additional = '];';
-                } else if (propertyDeclaration.endsWith('\'')) {
-                    additional = '\';';
-                } else if (propertyDeclaration.endsWith('"')) {
-                    additional = '";';
+            let declr = activeLine.text.trim();
+            if (!declr.includes(';')) {
+                if (declr.endsWith('[')) {
+                    declr = `${declr}];`;
+                } else if (declr.endsWith('\'')) {
+                    declr = `${declr}';`;
+                } else if (declr.endsWith('"')) {
+                    declr = `${declr}";`;
                 } else {
-                    additional = ';';
+                    declr = `${declr};`;
                 }
             }
-            const phpCode = `<?php \n class Foo { \n ${propertyDeclaration} ${additional} \n } \n`;
 
-            const ast = this._phpParser.parseCode(phpCode, '');
-            const klass = ast.children.find((node) => node.kind === 'class') as Class|undefined;
-            if (typeof klass === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            const phpParser = new Engine(App.instance.phpParserParams);
+            const program = phpParser.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`, '');
+
+            const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
+            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const stmt = klass.body.find((node) => node.kind === 'propertystatement') as PropertyStatement|undefined;
-            if (typeof stmt === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            if (typeof stmt === 'undefined') throw new Error('Invalid PHP code');
 
             const prop = stmt.properties.find((node) => node.kind === 'property') as any;
-            if (typeof prop === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            if (typeof prop === 'undefined') throw new Error('Invalid PHP code');
 
-            this._name = (prop.name as Name).name;
-
-            const varTypes: Array<string> = prop.type.kind === 'uniontype'
-                ? prop.type.types.map((t: Name) => t.name)
-                : [prop.type.name];
+            // eslint-disable-next-line max-len
+            const varTypes: Array<string> = prop.type.kind === 'uniontype' ? prop.type.types.map((t: Name) => t.name) : [prop.type.name];
+            if (prop.nullable && !varTypes.includes('null')) varTypes.push('null');
 
             const joinedVarTypes = varTypes.join('|');
             this._hint = joinedVarTypes;
@@ -133,11 +83,13 @@ export default class Property {
                 varTypes.splice(index, 1);
                 this._type = `?${varTypes.join('|')}`;
             }
+
+            this._name = (prop.name as Name).name;
         } catch (error: any) {
             this._name = R_UNDEFINED_PROPERTY;
             this._type = null;
             this._hint = null;
-            Utils.instance.showErrorMessage(`Failed to parse property: ${error}`);
+            Utils.instance.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
         }
     }
 

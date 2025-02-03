@@ -54,14 +54,10 @@ export default class App {
     private _composerData: {[k: string]: any};
 
     private constructor() {
-        if (!window.activeTextEditor) {
-            throw new Error('There are no active editors.');
-        }
+        if (!window.activeTextEditor) throw new Error('There are no active editors');
 
         this._editor = window.activeTextEditor;
-        if (this._editor.document.languageId !== 'php') {
-            throw new Error('Not a PHP file.');
-        }
+        if (this._editor.document.languageId !== 'php') throw new Error('Not a PHP file');
 
         this._config = workspace.getConfiguration('advanced-php-tools');
 
@@ -126,50 +122,56 @@ export default class App {
     }
 
     /**
+     * @returns {object}
+     */
+    public get phpParserParams(): object {
+        return {
+            parser: {
+                extractDoc: true,
+                version: App.instance.composer('php-version', '7.4'),
+            },
+            ast: {
+                withPositions: true,
+            },
+        };
+    }
+
+    /**
      * @returns {Array<IAction>}
      */
     public actions(): Array<IAction> {
         return [
-            {
-                name: CMD_INSERT_GETTER,
-                handler: () => (new Resolver()).render([R_GETTER]),
-            },
-            {
-                name: CMD_INSERT_SETTER,
-                handler: () => (new Resolver()).render([R_SETTER]),
-            },
-            {
-                name: CMD_INSERT_GETTER_SETTER,
-                handler: () => (new Resolver()).render([R_GETTER, R_SETTER]),
-            },
-            {
-                name: CMD_GENERATE_CLASS,
-                handler: () => (new Builder(F_CLASS)).render(),
-            },
-            {
-                name: CMD_GENERATE_ABSTRACT_CLASS,
-                handler: () => (new Builder(F_ABSTRACT_CLASS)).render(),
-            },
-            {
-                name: CMD_GENERATE_FINAL_CLASS,
-                handler: () => (new Builder(F_FINAL_CLASS)).render(),
-            },
-            {
-                name: CMD_GENERATE_ENUM,
-                handler: () => (new Builder(F_ENUM)).render(),
-            },
-            {
-                name: CMD_GENERATE_INTERFACE,
-                handler: () => (new Builder(F_INTERFACE)).render(),
-            },
-            {
-                name: CMD_GENERATE_TRAIT,
-                handler: () => (new Builder(F_TRAIT)).render(),
-            },
-            {
-                name: CMD_GENERATE_PHPDOC,
-                handler: () => (new Documenter()).render(),
-            },
+            {name: CMD_INSERT_GETTER, handler: () => this.getterSetter([R_GETTER])},
+            {name: CMD_INSERT_SETTER, handler: () => this.getterSetter([R_SETTER])},
+            {name: CMD_INSERT_GETTER_SETTER, handler: () => this.getterSetter([R_GETTER, R_SETTER])},
+            {name: CMD_GENERATE_CLASS, handler: () => this.fabric(F_CLASS)},
+            {name: CMD_GENERATE_ABSTRACT_CLASS, handler: () => this.fabric(F_ABSTRACT_CLASS)},
+            {name: CMD_GENERATE_FINAL_CLASS, handler: () => this.fabric(F_FINAL_CLASS)},
+            {name: CMD_GENERATE_ENUM, handler: () => this.fabric(F_ENUM)},
+            {name: CMD_GENERATE_INTERFACE, handler: () => this.fabric(F_INTERFACE)},
+            {name: CMD_GENERATE_TRAIT, handler: () => this.fabric(F_TRAIT)},
+            {name: CMD_GENERATE_PHPDOC, handler: () => this.phpdoc()},
         ];
+    }
+
+    /**
+     * @param {Array<string>} items
+     */
+    private getterSetter(items: Array<string>) {
+        const resolver = new Resolver();
+        resolver.render(items);
+    }
+
+    /**
+     * @param {string} type
+     */
+    private fabric(type: string) {
+        const builder = new Builder(type);
+        builder.render();
+    }
+
+    private phpdoc() {
+        const documenter = new Documenter();
+        documenter.render();
     }
 }
