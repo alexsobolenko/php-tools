@@ -26,6 +26,11 @@ export const A_FAB_STRICT_TYPES = 'builder-strict-types';
 export const A_GS_GENERATE_PHPDOC = 'getter-setter-generate-phpdoc';
 export const A_GS_RETURN_SELF = 'setter-return-self';
 
+/* messages */
+export const M_ERROR = 'error';
+export const M_WARNING = 'warning';
+export const M_INFO = 'info';
+
 /* getters-setters */
 export const R_GETTER = 'r_getter';
 export const R_SETTER = 'r_setter';

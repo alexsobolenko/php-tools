@@ -1,8 +1,8 @@
-import {TextEditor} from 'vscode';
 import {Class, ClassConstant, Name} from 'php-parser';
 import Block from './block';
-import {D_TYPE_CONSTANT, D_REGEX_CONSTANT} from '../../constants';
+import App from '../../app';
 import Utils from '../../utils';
+import {A_DOC_SHOW_DESCR, A_DOC_LINES_AFTER_DESCR, D_TYPE_CONSTANT, D_REGEX_CONSTANT, M_ERROR} from '../../constants';
 
 export default class ConstantBlock extends Block {
     /**
@@ -10,61 +10,58 @@ export default class ConstantBlock extends Block {
      */
     private _constType: string|null;
 
-    /**
-     * @param {TextEditor} editor
-     */
-    public constructor(editor: TextEditor) {
-        super(editor);
+    public constructor() {
+        super();
 
         this._type = D_TYPE_CONSTANT;
-        this._constType = null;
 
         try {
-            const constantDeclaration = this._activeLine.text.trim();
-            let additional = '';
-            if (!constantDeclaration.includes(';')) {
-                if (constantDeclaration.endsWith('[')) {
-                    additional = '];';
-                } else if (constantDeclaration.endsWith('\'')) {
-                    additional = '\';';
-                } else if (constantDeclaration.endsWith('"')) {
-                    additional = '";';
+            let declr = this._activeLine.text.trim();
+            if (!declr.includes(';')) {
+                if (declr.endsWith('[')) {
+                    declr = `${declr}];`;
+                } else if (declr.endsWith('\'')) {
+                    declr = `${declr}';`;
+                } else if (declr.endsWith('"')) {
+                    declr = `${declr}";`;
                 } else {
-                    additional = ';';
+                    declr = `${declr};`;
                 }
             }
-            const phpCode = `<?php \n class Foo { \n ${constantDeclaration} ${additional} \n } \n`;
+            const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
-            const ast = this._phpParser.parseCode(phpCode, '');
-            const klass = ast.children.find((node) => node.kind === 'class') as Class|undefined;
-            if (typeof klass === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
+            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const stmt = klass.body.find((node) => node.kind === 'classconstant') as ClassConstant|undefined;
-            if (typeof stmt === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            if (typeof stmt === 'undefined') throw new Error('Invalid PHP code');
 
             const konst = stmt.constants.find((node) => node.kind === 'constant') as any;
-            if (typeof konst === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+            if (typeof konst === 'undefined') throw new Error('Invalid PHP code');
 
             this._name = (konst.name as Name).name;
-            const m = constantDeclaration.match(D_REGEX_CONSTANT) as Array<string>|null;
-            if (m !== null && m.length >= 3) {
-                this._constType = /^[A-Z]+$/.test(m[2]) ? 'mixed' : m[2];
-            }
+            const matches = declr.match(D_REGEX_CONSTANT) as Array<string>|null;
+
+            // eslint-disable-next-line max-len
+            this._constType = (matches && matches.length >= 3) ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2]) : 'mixed';
         } catch (error: any) {
-            Utils.instance.showErrorMessage('Failed to parse class.');
+            this._constType = 'mixed';
+            Utils.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
     /**
-     * @returns {string|null}
+     * @returns {string}
      */
-    public get constType(): string|null {
-        return this._constType;
+    public get template(): string {
+        const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
+        const descriptionString = showDescription ? `${this._tab} * ${this._name} description.\n` : '';
+
+        const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
+        const afterDescription = Utils.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
+
+        return `${this._tab}/**\n${descriptionString}${afterDescription}`
+            + `${this._tab} * @var ${this._constType}\n`
+            + `${this._tab} */\n`;
     }
 }

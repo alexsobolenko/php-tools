@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -38,43 +38,43 @@
         "commands": [
             {
                 "command": "advanced-php-tools.insert-getter",
-                "title": "PHP Tools. Insert getter"
+                "title": "Advanced PHP Tools. Insert getter"
             },
             {
                 "command": "advanced-php-tools.insert-setter",
-                "title": "PHP Tools. Insert setter"
+                "title": "Advanced PHP Tools. Insert setter"
             },
             {
                 "command": "advanced-php-tools.insert-getter-setter",
-                "title": "PHP Tools. Insert getter and setter"
+                "title": "Advanced PHP Tools. Insert getter and setter"
             },
             {
                 "command": "advanced-php-tools.generate-class",
-                "title": "PHP Tools. Generate class"
+                "title": "Advanced PHP Tools. Generate class"
             },
             {
                 "command": "advanced-php-tools.generate-abstract-class",
-                "title": "PHP Tools. Generate abstract class"
+                "title": "Advanced PHP Tools. Generate abstract class"
             },
             {
                 "command": "advanced-php-tools.generate-final-class",
-                "title": "PHP Tools. Generate final class"
+                "title": "Advanced PHP Tools. Generate final class"
             },
             {
                 "command": "advanced-php-tools.generate-enum",
-                "title": "PHP Tools. Generate enum"
+                "title": "Advanced PHP Tools. Generate enum"
             },
             {
                 "command": "advanced-php-tools.generate-interface",
-                "title": "PHP Tools. Generate interface"
+                "title": "Advanced PHP Tools. Generate interface"
             },
             {
                 "command": "advanced-php-tools.generate-trait",
-                "title": "PHP Tools. Generate trait"
+                "title": "Advanced PHP Tools. Generate trait"
             },
             {
                 "command": "advanced-php-tools.generate-php-doc",
-                "title": "PHP Tools. Generate PHPDoc"
+                "title": "Advanced PHP Tools. Generate PHPDoc"
             }
         ],
         "keybindings": [

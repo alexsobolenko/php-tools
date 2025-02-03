@@ -1,12 +1,8 @@
 import {Position, TextEditorEdit} from 'vscode';
+import File from './file';
 import App from '../app';
 import Utils from '../utils';
-import File from './file';
-import {
-    A_FAB_GENERATE_PHPDOC,
-    A_FAB_STRICT_TYPES,
-    F_UNDEFINED_TYPE,
-} from '../constants';
+import {A_FAB_GENERATE_PHPDOC, A_FAB_STRICT_TYPES, F_UNDEFINED_TYPE} from '../constants';
 
 export default class Builder {
     /**
@@ -18,7 +14,7 @@ export default class Builder {
      * @param {string} type
      */
     constructor(type: string) {
-        this._file = new File(App.instance.editor, type);
+        this._file = new File(type);
     }
 
     public render() {
@@ -32,7 +28,7 @@ export default class Builder {
                 edit.replace(new Position(0, 0), template);
             });
         } catch (error: any) {
-            Utils.instance.showErrorMessage(`Error generating object: '${error.message}'.`);
+            Utils.instance.showMessage(`Error generating object: '${error.message}'.`, 'error');
         }
     }
 

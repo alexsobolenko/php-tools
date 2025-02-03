@@ -21,25 +21,25 @@ Tools for better PHP development
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/getters-setters.gif)
 
 ### Available commands:
-- PHP Tools. Insert getter
-- PHP Tools. Insert setter
-- PHP Tools. Insert getter and setter
+- Advanced PHP Tools. Insert getter
+- Advanced PHP Tools. Insert setter
+- Advanced PHP Tools. Insert getter and setter
 
 ## Feature #2 - Generate class, interface, trait and enum
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/fabric.gif)
 
 ### Available commands:
-- PHP Tools. Generate class
-- PHP Tools. Generate abstract class
-- PHP Tools. Generate final class
-- PHP Tools. Generate enum
-- PHP Tools. Generate interface
-- PHP Tools. Generate trait
+- Advanced PHP Tools. Generate class
+- Advanced PHP Tools. Generate abstract class
+- Advanced PHP Tools. Generate final class
+- Advanced PHP Tools. Generate enum
+- Advanced PHP Tools. Generate interface
+- Advanced PHP Tools. Generate trait
 
 ## Feature #3 - Generate PHPDoc
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/phpdoc.gif)
 
 ### Available commands:
-- PHP Tools. Generate PHPDoc (default key: `ctrl+enter`)
+- Advanced PHP Tools. Generate PHPDoc (default key: `ctrl+enter`)

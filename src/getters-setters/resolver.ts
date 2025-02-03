@@ -6,6 +6,7 @@ import {
     A_DOC_SHOW_DESCR,
     A_GS_GENERATE_PHPDOC,
     A_GS_RETURN_SELF,
+    M_ERROR,
     R_GETTER,
     R_SETTER,
     R_UNDEFINED_PROPERTY,
@@ -20,10 +21,7 @@ export default class Resolver {
     public properties: Array<Property>;
 
     public constructor() {
-        // TODO: handle more then one property
-        this.properties = [
-            new Property(App.instance.editor),
-        ];
+        this.properties = [new Property()];
     }
 
     /**
@@ -33,7 +31,7 @@ export default class Resolver {
     public getterTemplate(property: Property): string {
         if (property.name === R_UNDEFINED_PROPERTY) return '';
 
-        Utils.instance.showInformationMessage(`Getter for property '${property.name}' created.`);
+        Utils.instance.showMessage(`Getter for property '${property.name}' created.`);
 
         const fcnName = property.getFunction(R_GETTER);
 
@@ -65,7 +63,7 @@ export default class Resolver {
     public setterTemplate(property: Property): string {
         if (property.name === R_UNDEFINED_PROPERTY) return '';
 
-        Utils.instance.showInformationMessage(`Setter for property '${property.name}' created.`);
+        Utils.instance.showMessage(`Setter for property '${property.name}' created.`);
 
         const fcnName = property.getFunction(R_SETTER);
 
@@ -142,7 +140,7 @@ export default class Resolver {
                 edit.replace(new Position(insertLine.lineNumber, 0), templates.join(''));
             });
         } catch (error: any) {
-            Utils.instance.showErrorMessage(`Error generating object: '${error.message}'.`);
+            Utils.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
         }
     }
 }

@@ -1,8 +1,7 @@
-import {TextEditor} from 'vscode';
-import {Class, Enum, Interface, Name, Trait} from 'php-parser';
+import {Declaration, Name} from 'php-parser';
 import Block from './block';
-import {D_TYPE_CLASS} from '../../constants';
 import Utils from '../../utils';
+import {D_TYPE_CLASS, M_ERROR} from '../../constants';
 
 export default class ClassBlock extends Block {
     /**
@@ -10,40 +9,35 @@ export default class ClassBlock extends Block {
      */
     private _kind: string;
 
-    /**
-     * @param {TextEditor} editor
-     */
-    public constructor(editor: TextEditor) {
-        super(editor);
+    public constructor() {
+        super();
 
         this._type = D_TYPE_CLASS;
         this._kind = '';
 
         try {
-            const classDeclaration = this._activeLine.text.trim();
-            const additional = classDeclaration.includes('{') ? '}' : ' {}';
-            const phpCode = `<?php \n ${classDeclaration} ${additional} \n`;
-
-            const ast = this._phpParser.parseCode(phpCode, '');
+            let declr = this._activeLine.text.trim();
+            declr = `${declr} ${declr.includes('{') ? '}' : ' {}'}`;
+            const program = this.parseCode(`<?php \n ${declr} \n`);
             const types = ['class', 'enum', 'interface', 'trait'];
-            // eslint-disable-next-line max-len
-            const klass = ast.children.find((node) => types.includes(node.kind)) as Class|Trait|Interface|Enum|undefined;
-            if (typeof klass === 'undefined') {
-                throw new Error('Invalid PHP code.');
-            }
+
+            const klass = program.children.find((node) => types.includes(node.kind)) as Declaration|undefined;
+            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const className = klass.name as Name;
             this._name = className.name;
             this._kind = klass.kind;
         } catch (error: any) {
-            Utils.instance.showErrorMessage('Failed to parse class.');
+            Utils.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
     /**
      * @returns {string}
      */
-    public get kind(): string {
-        return this._kind;
+    public get template(): string {
+        const name = `${Utils.instance.capitalizeFirstCharTrimmed(this._kind)} ${this._name}`;
+
+        return `${this._tab}/**\n${this._tab} * ${name} description.\n${this._tab} */\n`;
     }
 }
