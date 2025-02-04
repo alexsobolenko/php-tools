@@ -10,7 +10,7 @@
         "sourceMap": true
     },
     "include": [
-      "src/**/*.ts",
-      "src/test/**/*.ts"
+        "src/**/*.ts",
+        "src/test/**/*.ts"
     ]
 }

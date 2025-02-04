@@ -25,8 +25,6 @@ import {
 } from './constants';
 
 export function activate(context: ExtensionContext) {
-    // {name: CMD_GENERATE_PHPDOC, handler: () => this.phpdoc()},
-
     /* getters-setters */
     context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER, () => {
         const position = App.instance.editor.selection.active;
