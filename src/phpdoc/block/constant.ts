@@ -1,8 +1,13 @@
 import {Class, ClassConstant, Name} from 'php-parser';
 import Block from './block';
 import App from '../../app';
-import Utils from '../../utils';
-import {A_DOC_SHOW_DESCR, A_DOC_LINES_AFTER_DESCR, D_TYPE_CONSTANT, D_REGEX_CONSTANT, M_ERROR} from '../../constants';
+import {
+    A_DOC_SHOW_DESCR,
+    A_DOC_LINES_AFTER_DESCR,
+    D_TYPE_CONSTANT,
+    D_REGEX_CONSTANT,
+    M_ERROR,
+} from '../../constants';
 
 export default class ConstantBlock extends Block {
     /**
@@ -46,7 +51,7 @@ export default class ConstantBlock extends Block {
             this._constType = (matches && matches.length >= 3) ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2]) : 'mixed';
         } catch (error: any) {
             this._constType = 'mixed';
-            Utils.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -58,7 +63,7 @@ export default class ConstantBlock extends Block {
         const descriptionString = showDescription ? `${this._tab} * ${this._name} description.\n` : '';
 
         const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-        const afterDescription = Utils.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
+        const afterDescription = App.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
 
         return `${this._tab}/**\n${descriptionString}${afterDescription}`
             + `${this._tab} * @var ${this._constType}\n`

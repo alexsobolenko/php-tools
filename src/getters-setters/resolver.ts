@@ -1,4 +1,5 @@
 import {Position, TextEditorEdit} from 'vscode';
+import App from '../app';
 import Property from './property';
 import {
     A_DOC_LINES_AFTER_DESCR,
@@ -11,8 +12,6 @@ import {
     R_SETTER,
     R_UNDEFINED_PROPERTY,
 } from '../constants';
-import App from '../app';
-import Utils from '../utils';
 
 export default class Resolver {
     /**
@@ -20,8 +19,8 @@ export default class Resolver {
      */
     public properties: Array<Property>;
 
-    public constructor() {
-        this.properties = [new Property()];
+    public constructor(positions: Array<Position>) {
+        this.properties = positions.map((position: Position) => new Property(position));
     }
 
     /**
@@ -31,7 +30,7 @@ export default class Resolver {
     public getterTemplate(property: Property): string {
         if (property.name === R_UNDEFINED_PROPERTY) return '';
 
-        Utils.instance.showMessage(`Getter for property '${property.name}' created.`);
+        App.instance.showMessage(`Getter for property '${property.name}' created.`);
 
         const fcnName = property.getFunction(R_GETTER);
 
@@ -42,7 +41,7 @@ export default class Resolver {
             const description = showDescription ? `${property.tab} * Getter for ${property.name}\n` : '';
 
             const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-            const afterDescription = Utils.instance.multiplyString(`${property.tab} *\n`, emptyLinesAfterDescription);
+            const afterDescription = App.instance.multiplyString(`${property.tab} *\n`, emptyLinesAfterDescription);
 
             phpdoc = `\n${property.tab}/**\n${description}${afterDescription}`
                 + `${property.tab} * @return ${property.hint}\n`
@@ -63,7 +62,7 @@ export default class Resolver {
     public setterTemplate(property: Property): string {
         if (property.name === R_UNDEFINED_PROPERTY) return '';
 
-        Utils.instance.showMessage(`Setter for property '${property.name}' created.`);
+        App.instance.showMessage(`Setter for property '${property.name}' created.`);
 
         const fcnName = property.getFunction(R_SETTER);
 
@@ -81,10 +80,10 @@ export default class Resolver {
             const description = showDescription ? `${property.tab} * Getter for ${property.name}\n` : '';
 
             const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-            const afterDescription = Utils.instance.multiplyString(`${property.tab} *\n`, emptyLinesAfterDescription);
+            const afterDescription = App.instance.multiplyString(`${property.tab} *\n`, emptyLinesAfterDescription);
 
             const emptyLinesBeforeReturn = returnSelf ? App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0) : 0;
-            const beforeReturn = Utils.instance.multiplyString(`${property.tab} *\n`, emptyLinesBeforeReturn);
+            const beforeReturn = App.instance.multiplyString(`${property.tab} *\n`, emptyLinesBeforeReturn);
 
             phpdoc = `\n${property.tab}/**\n${description}${afterDescription}`
                 + `${property.tab} * @param ${property.hint} $${property.name}\n`
@@ -140,7 +139,7 @@ export default class Resolver {
                 edit.replace(new Position(insertLine.lineNumber, 0), templates.join(''));
             });
         } catch (error: any) {
-            Utils.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
+            App.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
         }
     }
 }

@@ -1,8 +1,7 @@
 import {Class, Method, Name, Parameter} from 'php-parser';
-import Block from './block';
 import App from '../../app';
-import Utils from '../../utils';
 import {IParameter} from '../../interfaces';
+import Block from './block';
 import {
     A_DOC_LINES_AFTER_DESCR,
     A_DOC_LINES_BEFORE_RETURN,
@@ -67,13 +66,11 @@ export default class FunctionBlock extends Block {
             // eslint-disable-next-line max-len
             const types = funcType ? (func.type.kind === 'uniontype' ? funcType.types.map((t: Name) => t.name) : [funcType.name]) : ['mixed'];
             if (func.nullable && !types.includes('void') && !types.includes('null')) types.push('null');
-
-            const nullIndex = types.indexOf('null');
-            this._returnHint = (nullIndex === -1 || types.length > 2) ? types.join('|') : `?${types[1 - nullIndex]}`;
+            this._returnHint = types.join('|');
         } catch (error: any) {
             this._returnHint = '';
             this._params = [];
-            Utils.instance.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
         }
     }
 
@@ -85,7 +82,7 @@ export default class FunctionBlock extends Block {
         const descriptionString = showDescription ? `${this._tab} * ${this._name} description.\n` : '';
 
         const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-        const afterDescription = Utils.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
+        const afterDescription = App.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
 
         const params = this._params.map((p: IParameter) => `${this._tab} * @param ${p.hint} $${p.name}`);
 
@@ -95,7 +92,7 @@ export default class FunctionBlock extends Block {
 
         // eslint-disable-next-line max-len
         const emptyLinesBeforeReturn = (!returnVoid && this._returnHint === 'void') ? 0 : App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0);
-        const beforeReturn = Utils.instance.multiplyString(`${this._tab} *\n`, emptyLinesBeforeReturn);
+        const beforeReturn = App.instance.multiplyString(`${this._tab} *\n`, emptyLinesBeforeReturn);
 
         return `${this._tab}/**\n${descriptionString}${afterDescription}`
             + `${params.join('\n')}${params.length > 0 ? '\n' : ''}`

@@ -1,31 +1,7 @@
 import {TextEditor, WorkspaceConfiguration, WorkspaceFolder, window, workspace} from 'vscode';
 import fs from 'fs';
 import path from 'path';
-import {IAction} from './interfaces';
-import Utils from './utils';
-import Resolver from './getters-setters/resolver';
-import Builder from './fabric/builder';
-import Documenter from './phpdoc/documenter';
-import {
-    CMD_GENERATE_ABSTRACT_CLASS,
-    CMD_GENERATE_CLASS,
-    CMD_GENERATE_ENUM,
-    CMD_GENERATE_FINAL_CLASS,
-    CMD_GENERATE_INTERFACE,
-    CMD_GENERATE_PHPDOC,
-    CMD_GENERATE_TRAIT,
-    CMD_INSERT_GETTER,
-    CMD_INSERT_GETTER_SETTER,
-    CMD_INSERT_SETTER,
-    F_ABSTRACT_CLASS,
-    F_CLASS,
-    F_ENUM,
-    F_FINAL_CLASS,
-    F_INTERFACE,
-    F_TRAIT,
-    R_GETTER,
-    R_SETTER,
-} from './constants';
+import {M_ERROR, M_INFO, M_WARNING} from './constants';
 
 export default class App {
     /**
@@ -118,7 +94,7 @@ export default class App {
      * @returns {any}
      */
     public composer(key: string, defaultValue: any = null): any {
-        return Utils.instance.hasKey(this._composerData, key) ? this._composerData[key] : defaultValue;
+        return App.instance.hasKey(this._composerData, key) ? this._composerData[key] : defaultValue;
     }
 
     /**
@@ -137,41 +113,92 @@ export default class App {
     }
 
     /**
-     * @returns {Array<IAction>}
-     */
-    public actions(): Array<IAction> {
-        return [
-            {name: CMD_INSERT_GETTER, handler: () => this.getterSetter([R_GETTER])},
-            {name: CMD_INSERT_SETTER, handler: () => this.getterSetter([R_SETTER])},
-            {name: CMD_INSERT_GETTER_SETTER, handler: () => this.getterSetter([R_GETTER, R_SETTER])},
-            {name: CMD_GENERATE_CLASS, handler: () => this.fabric(F_CLASS)},
-            {name: CMD_GENERATE_ABSTRACT_CLASS, handler: () => this.fabric(F_ABSTRACT_CLASS)},
-            {name: CMD_GENERATE_FINAL_CLASS, handler: () => this.fabric(F_FINAL_CLASS)},
-            {name: CMD_GENERATE_ENUM, handler: () => this.fabric(F_ENUM)},
-            {name: CMD_GENERATE_INTERFACE, handler: () => this.fabric(F_INTERFACE)},
-            {name: CMD_GENERATE_TRAIT, handler: () => this.fabric(F_TRAIT)},
-            {name: CMD_GENERATE_PHPDOC, handler: () => this.phpdoc()},
-        ];
-    }
-
-    /**
-     * @param {Array<string>} items
-     */
-    private getterSetter(items: Array<string>) {
-        const resolver = new Resolver();
-        resolver.render(items);
-    }
-
-    /**
+     * @param {string} buffer
      * @param {string} type
      */
-    private fabric(type: string) {
-        const builder = new Builder(type);
-        builder.render();
+    public showMessage(buffer: string, type: string = 'info') {
+        const message = buffer.replace(/\$\(.+?\)\s\s/, '');
+        const data = [M_ERROR, M_INFO, M_WARNING];
+        const fcn = data.includes(type) ? type : M_INFO;
+        if (fcn === M_ERROR) {
+            window.showErrorMessage(message);
+        } else if (fcn === M_WARNING) {
+            window.showWarningMessage(message);
+        } else {
+            window.showInformationMessage(message);
+        }
     }
 
-    private phpdoc() {
-        const documenter = new Documenter();
-        documenter.render();
+    /**
+     * @param {any} element
+     * @param {number} cnt
+     * @returns {Array<any>}
+     */
+    public fillArray(element: any, cnt: number): Array<any> {
+        const res = new Array(cnt);
+        res.fill(element);
+
+        return res;
+    }
+
+    /**
+     * @param {string} element
+     * @param {number} cnt
+     * @param {string} separator
+     * @returns {string}
+     */
+    public multiplyString(element: string, cnt: number, separator: string = ''): string {
+        return this.fillArray(element, cnt).join(separator);
+    }
+
+    /**
+     * @param {object} obj
+     * @param {string} key
+     * @returns {key is keyof typeof obj}
+     */
+    public hasKey(obj: object, key: string): key is keyof typeof obj {
+        return key in obj;
+    }
+
+    /**
+     * @param {string} fullPath
+     * @returns {string}
+     */
+    public pathToNamespace(fullPath: string): string {
+        const autoloadData = App.instance.composer('autoload');
+        const relativePath = fullPath.replace(App.instance.workplacePath, '').replace('.php', '').substring(1);
+        let result = relativePath;
+        Object.keys(autoloadData).forEach((namespaceStart) => {
+            const searchString = autoloadData[namespaceStart];
+            if (relativePath.startsWith(searchString)) {
+                result = relativePath.replace(searchString, namespaceStart).replaceAll('/', '\\');
+            }
+        });
+
+        return result;
+    }
+
+    /**
+     * @param {string} fullPath
+     * @returns {[string, string]}
+     */
+    public splitPath(fullPath: string): [string, string] {
+        const lastSlashIndex = fullPath.lastIndexOf('/');
+        if (lastSlashIndex === -1) {
+            return ['', fullPath];
+        }
+
+        return [fullPath.substring(0, lastSlashIndex), fullPath.substring(lastSlashIndex + 1)];
+    }
+
+    /**
+     * @param {string} input
+     * @returns {string}
+     */
+    public capitalizeFirstCharTrimmed(input: string): string {
+        const trimmedInput = input.trim();
+        if (!trimmedInput) return trimmedInput;
+
+        return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
     }
 }

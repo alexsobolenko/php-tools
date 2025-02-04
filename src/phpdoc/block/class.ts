@@ -1,6 +1,6 @@
 import {Declaration, Name} from 'php-parser';
 import Block from './block';
-import Utils from '../../utils';
+import App from '../../app';
 import {D_TYPE_CLASS, M_ERROR} from '../../constants';
 
 export default class ClassBlock extends Block {
@@ -28,7 +28,7 @@ export default class ClassBlock extends Block {
             this._name = className.name;
             this._kind = klass.kind;
         } catch (error: any) {
-            Utils.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -36,7 +36,7 @@ export default class ClassBlock extends Block {
      * @returns {string}
      */
     public get template(): string {
-        const name = `${Utils.instance.capitalizeFirstCharTrimmed(this._kind)} ${this._name}`;
+        const name = `${App.instance.capitalizeFirstCharTrimmed(this._kind)} ${this._name}`;
 
         return `${this._tab}/**\n${this._tab} * ${name} description.\n${this._tab} */\n`;
     }
