@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.5] - 2024-02-17
+
+### Added
+
+- Feature #4 - generate constructor
+
 ## [0.2.4] - 2024-02-17
 
 ### Changed
