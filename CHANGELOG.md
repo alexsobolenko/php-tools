@@ -1,12 +1,10 @@
 # Change Log
 
-## [0.2.4] - 2024-02-17
+## [0.2.3] - 2024-02-17
 
 ### Added
 
 - Show throws to PHPDoc
-
-## [0.2.3] - 2024-02-04
 
 ### Changed
 
