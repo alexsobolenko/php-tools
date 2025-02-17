@@ -13,7 +13,7 @@ export default class Builder {
      * @param {string} type
      */
     constructor(type: string) {
-        this._file = new File(type);
+        this._file = new File(App.instance.editor.document.fileName, type);
     }
 
     public render() {
@@ -35,22 +35,21 @@ export default class Builder {
      * @returns {string}
      */
     private template(): string {
-        const keyword = this._file.keyword as string;
-        let result = '';
-        if (keyword !== F_UNDEFINED_TYPE) {
-            const addStrictTypes = !!App.instance.config(A_FAB_STRICT_TYPES, true);
-            const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
-
-            const addPhpdoc = !!App.instance.config(A_FAB_GENERATE_PHPDOC, false);
-            const name = `${App.instance.capitalizeFirstCharTrimmed(keyword)} ${this._file.name}`;
-            const phpdoc = addPhpdoc ? `/**\n * ${name}\n */\n` : '';
-
-            result = `<?php\n\n${strictTypes}`
-                + `namespace ${this._file.namespace};\n\n`
-                + `${phpdoc}${keyword} ${this._file.name}\n`
-                + '{\n}\n';
+        const {keyword} = this._file;
+        if (keyword === F_UNDEFINED_TYPE) {
+            return '';
         }
 
-        return result;
+        const addStrictTypes = !!App.instance.config(A_FAB_STRICT_TYPES, true);
+        const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
+
+        const addPhpdoc = !!App.instance.config(A_FAB_GENERATE_PHPDOC, false);
+        const name = `${App.instance.capitalizeFirstCharTrimmed(keyword)} ${this._file.name}`;
+        const phpdoc = addPhpdoc ? `/**\n * ${name} ${this._file.name}\n */\n` : '';
+
+        return `<?php\n\n${strictTypes}`
+            + `namespace ${this._file.namespace};\n\n`
+            + `${phpdoc}${keyword} ${this._file.name}\n`
+            + '{\n}\n';
     }
 }
