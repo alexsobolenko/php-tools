@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -136,6 +136,16 @@
                     "type": "integer",
                     "default": 0,
                     "description": "Add empty lines before return in PHPDoc"
+                },
+                "advanced-php-tools.phpdoc-empty-lines-before-throws": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Add empty lines before throws in PHPDoc"
+                },
+                "advanced-php-tools.phpdoc-show-throws-on-diff-lines": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show throws on different lines"
                 }
             }
         }

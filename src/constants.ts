@@ -16,9 +16,11 @@ export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
 export const A_DOC_CONST_DESCR = 'phpdoc-constant-show-description';
 export const A_DOC_LINES_AFTER_DESCR = 'phpdoc-empty-lines-after-description';
 export const A_DOC_LINES_BEFORE_RETURN = 'phpdoc-empty-lines-before-return';
+export const A_DOC_LINES_BEFORE_THROWS = 'phpdoc-empty-lines-before-throws';
 export const A_DOC_PROPERTY_DESCR = 'phpdoc-property-show-description';
 export const A_DOC_RETURN_VOID = 'phpdoc-function-return-void';
 export const A_DOC_SHOW_DESCR = 'phpdoc-function-show-description';
+export const A_DOC_SHOW_THROWS_ON_DIFF_LINES = 'phpdoc-show-throws-on-diff-lines';
 
 export const A_FAB_GENERATE_PHPDOC = 'builder-generate-phpdoc';
 export const A_FAB_STRICT_TYPES = 'builder-strict-types';
@@ -50,7 +52,7 @@ export const F_UNDEFINED_TYPE = '__undefined__';
 /* phpdoc */
 export const D_TYPE_FUNCTION = 'function';
 // eslint-disable-next-line max-len
-export const D_REGEX_FUNCTION = /^\s*(public|protected|private|static|final)?\s*(static|final)?\s*function\s+\w+\s*(\([^)]*\))?\s*(?::\s*\??\s*[\w\\]+)?\s*/u;
+export const D_REGEX_FUNCTION = /^\s*(public|protected|private|static|final)?\s*(static|final)?\s*function\s+(\w+)\s*(\([^)]*\))?\s*(?::\s*\??\s*[\w\\]+)?\s*/u;
 
 export const D_TYPE_CLASS = 'class';
 export const D_REGEX_CLASS = /(class|interface|trait|enum)\s+(\w+)\s?/u;
