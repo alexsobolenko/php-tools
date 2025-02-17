@@ -6,6 +6,7 @@ import Documenter from './phpdoc/documenter';
 import {
     CMD_GENERATE_ABSTRACT_CLASS,
     CMD_GENERATE_CLASS,
+    CMD_GENERATE_CONSTRUCTOR,
     CMD_GENERATE_ENUM,
     CMD_GENERATE_FINAL_CLASS,
     CMD_GENERATE_INTERFACE,
@@ -23,6 +24,7 @@ import {
     R_GETTER,
     R_SETTER,
 } from './constants';
+import Construct from './constructor/construct';
 
 export function activate(context: ExtensionContext) {
     /* getters-setters */
@@ -73,6 +75,13 @@ export function activate(context: ExtensionContext) {
         const position = App.instance.editor.selection.active;
         const documenter = new Documenter(position);
         documenter.render();
+    }));
+
+    /* constructor */
+    context.subscriptions.push(commands.registerCommand(CMD_GENERATE_CONSTRUCTOR, async () => {
+        const construct = new Construct();
+        await construct.fill();
+        construct.render();
     }));
 }
 

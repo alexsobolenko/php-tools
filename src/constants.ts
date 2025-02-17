@@ -12,6 +12,8 @@ export const CMD_GENERATE_TRAIT = 'advanced-php-tools.generate-trait';
 
 export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
 
+export const CMD_GENERATE_CONSTRUCTOR = 'advanced-php-tools.generate-constructor';
+
 /* parameters */
 export const A_DOC_CONST_DESCR = 'phpdoc-constant-show-description';
 export const A_DOC_LINES_AFTER_DESCR = 'phpdoc-empty-lines-after-description';
