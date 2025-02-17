@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.2.3] - 2024-02-17
+
+### Added
+
+- Show throws to PHPDoc
+
+### Changed
+
+- Optimized
+
 ## [0.2.2] - 2024-02-03
 
 ### Changed

@@ -1,6 +1,13 @@
 import App from '../app';
-import Utils from '../utils';
-import {F_ABSTRACT_CLASS, F_CLASS, F_ENUM, F_FINAL_CLASS, F_INTERFACE, F_TRAIT, F_UNDEFINED_TYPE} from '../constants';
+import {
+    F_ABSTRACT_CLASS,
+    F_CLASS,
+    F_ENUM,
+    F_FINAL_CLASS,
+    F_INTERFACE,
+    F_TRAIT,
+    F_UNDEFINED_TYPE,
+} from '../constants';
 
 export default class File {
     /**
@@ -22,8 +29,8 @@ export default class File {
      * @param {string} type
      */
     public constructor(type: string) {
-        const nameData = Utils.instance.splitPath(App.instance.editor.document.fileName);
-        this._namespace = Utils.instance.pathToNamespace(nameData[0]);
+        const nameData = App.instance.splitPath(App.instance.editor.document.fileName);
+        this._namespace = App.instance.pathToNamespace(nameData[0]);
         this._name = nameData[1].replace('.php', '');
         this._type = type;
     }
@@ -55,6 +62,6 @@ export default class File {
             [F_TRAIT]: 'trait',
         };
 
-        return Utils.instance.hasKey(data, this._type) ? data[this._type] : F_UNDEFINED_TYPE;
+        return App.instance.hasKey(data, this._type) ? data[this._type] : F_UNDEFINED_TYPE;
     }
 }

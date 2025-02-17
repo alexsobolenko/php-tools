@@ -1,6 +1,6 @@
+import {Position} from 'vscode';
 import {Class, Engine, Name, PropertyStatement} from 'php-parser';
 import App from '../app';
-import Utils from '../utils';
 import {D_REGEX_CLASS, M_ERROR, R_SETTER, R_UNDEFINED_PROPERTY} from '../constants';
 
 export default class Property {
@@ -29,8 +29,10 @@ export default class Property {
      */
     private _className: string;
 
-    public constructor() {
-        const position = App.instance.editor.selection.active;
+    /**
+     * @param {Position} position
+     */
+    public constructor(position: Position) {
         const activeLine = App.instance.editor.document.lineAt(position.line);
 
         this._tab = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
@@ -89,7 +91,7 @@ export default class Property {
             this._name = R_UNDEFINED_PROPERTY;
             this._type = null;
             this._hint = null;
-            Utils.instance.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
         }
     }
 
@@ -98,15 +100,10 @@ export default class Property {
      * @returns {string}
      */
     public getFunction(type: string): string {
-        const name = Utils.instance.capitalizeFirstCharTrimmed(this._name);
-        switch (true) {
-            case (type === R_SETTER):
-                return `set${name}`;
-            case (['bool', 'boolean'].includes(this._hint ?? '')):
-                return `is${name}`;
-            default:
-                return `get${name}`;
-        }
+        const isBoolHint = ['bool', 'boolean'].includes(this._hint ?? '');
+        const prefix = type === R_SETTER ? 'set' : (isBoolHint ? 'is' : 'get');
+
+        return prefix + App.instance.capitalizeFirstCharTrimmed(this._name);
     }
 
     /**

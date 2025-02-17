@@ -1,8 +1,12 @@
 import {Class, Name, PropertyStatement} from 'php-parser';
-import Block from './block';
 import App from '../../app';
-import Utils from '../../utils';
-import {A_DOC_LINES_AFTER_DESCR, A_DOC_SHOW_DESCR, D_TYPE_PROPERTY, M_ERROR} from '../../constants';
+import Block from './block';
+import {
+    A_DOC_LINES_AFTER_DESCR,
+    A_DOC_SHOW_DESCR,
+    D_TYPE_PROPERTY,
+    M_ERROR,
+} from '../../constants';
 
 export default class PropertyBlock extends Block {
     /**
@@ -47,7 +51,7 @@ export default class PropertyBlock extends Block {
             this._varHint = types.join('|');
         } catch (error: any) {
             this._varHint = 'mixed';
-            Utils.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -59,7 +63,7 @@ export default class PropertyBlock extends Block {
         const descriptionString = showDescription ? `${this._tab} * ${this._name} description.\n` : '';
 
         const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-        const afterDescription = Utils.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
+        const afterDescription = App.instance.multiplyString(`${this._tab} *\n`, emptyLinesAfterDescription);
 
         return `${this._tab}/**\n${descriptionString}${afterDescription}`
             + `${this._tab} * @var ${this._varHint}\n`

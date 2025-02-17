@@ -15,6 +15,8 @@ Tools for better PHP development
 - `advanced-php-tools.phpdoc-function-return-void` - Add return to PHPDoc if returns void (default: `false`)
 - `advanced-php-tools.phpdoc-empty-lines-after-description` - Add empty lines after description in PHPDoc (default: `0`, ignored when description disabled)
 - `advanced-php-tools.phpdoc-empty-lines-before-return` - Add empty lines before return in PHPDoc (default: `0`, ignored when return not show or there are not params)
+- `advanced-php-tools.phpdoc-empty-lines-before-throws` - Add empty lines before throws in PHPDoc (default: `0`, ignored when there are not throws)
+- `advanced-php-tools.phpdoc-show-throws-on-diff-lines` - Show throws on different lines (default: `true`)
 
 ## Feature #1 - Generate getter and setter for class property
 
