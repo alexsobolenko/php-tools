@@ -26,10 +26,11 @@ export default class File {
     private _type: string;
 
     /**
+     * @param {string} fileName
      * @param {string} type
      */
-    public constructor(type: string) {
-        const nameData = App.instance.splitPath(App.instance.editor.document.fileName);
+    public constructor(fileName: string, type: string) {
+        const nameData = App.instance.splitPath(fileName);
         this._namespace = App.instance.pathToNamespace(nameData[0]);
         this._name = nameData[1].replace('.php', '');
         this._type = type;
@@ -53,7 +54,7 @@ export default class File {
      * @returns {string}
      */
     public get keyword(): string {
-        const data = {
+        const data: {[k: string]: string} = {
             [F_ABSTRACT_CLASS]: 'abstract class',
             [F_CLASS]: 'class',
             [F_ENUM]: 'enum',
@@ -62,6 +63,6 @@ export default class File {
             [F_TRAIT]: 'trait',
         };
 
-        return App.instance.hasKey(data, this._type) ? data[this._type] : F_UNDEFINED_TYPE;
+        return data[this._type] || F_UNDEFINED_TYPE;
     }
 }

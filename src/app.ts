@@ -10,11 +10,6 @@ export default class App {
     private static _instance: App;
 
     /**
-     * @type {TextEditor}
-     */
-    private _editor: TextEditor;
-
-    /**
      * @type {WorkspaceConfiguration}
      */
     private _config: WorkspaceConfiguration;
@@ -30,11 +25,6 @@ export default class App {
     private _composerData: {[k: string]: any};
 
     private constructor() {
-        if (!window.activeTextEditor) throw new Error('There are no active editors');
-
-        this._editor = window.activeTextEditor;
-        if (this._editor.document.languageId !== 'php') throw new Error('Not a PHP file');
-
         this._config = workspace.getConfiguration('advanced-php-tools');
 
         this._workplacePath = '';
@@ -69,7 +59,16 @@ export default class App {
      * @returns {TextEditor}
      */
     public get editor(): TextEditor {
-        return this._editor;
+        if (!window.activeTextEditor) {
+            throw new Error('There are no active editors');
+        }
+
+        const editor: TextEditor = window.activeTextEditor;
+        if (editor.document.languageId !== 'php') {
+            throw new Error('Not a PHP file');
+        }
+
+        return editor;
     }
 
     /**
