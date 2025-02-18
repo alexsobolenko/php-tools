@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -47,6 +47,18 @@
             {
                 "command": "advanced-php-tools.insert-getter-setter",
                 "title": "Advanced PHP Tools. Insert getter and setter"
+            },
+            {
+                "command": "advanced-php-tools.insert-getter-wizard",
+                "title": "Advanced PHP Tools. Insert getter (Wizard)"
+            },
+            {
+                "command": "advanced-php-tools.insert-setter-wizard",
+                "title": "Advanced PHP Tools. Insert setter (Wizard)"
+            },
+            {
+                "command": "advanced-php-tools.insert-getter-setter-wizard",
+                "title": "Advanced PHP Tools. Insert getter and setter (Wizard)"
             },
             {
                 "command": "advanced-php-tools.generate-class",

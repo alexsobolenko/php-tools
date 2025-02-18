@@ -2,6 +2,9 @@
 export const CMD_INSERT_GETTER = 'advanced-php-tools.insert-getter';
 export const CMD_INSERT_SETTER = 'advanced-php-tools.insert-setter';
 export const CMD_INSERT_GETTER_SETTER = 'advanced-php-tools.insert-getter-setter';
+export const CMD_INSERT_GETTER_WIZARD = 'advanced-php-tools.insert-getter-wizard';
+export const CMD_INSERT_SETTER_WIZARD = 'advanced-php-tools.insert-setter-wizard';
+export const CMD_INSERT_GETTER_SETTER_WIZARD = 'advanced-php-tools.insert-getter-setter-wizard';
 
 export const CMD_GENERATE_CLASS = 'advanced-php-tools.generate-class';
 export const CMD_GENERATE_ABSTRACT_CLASS = 'advanced-php-tools.generate-abstract-class';

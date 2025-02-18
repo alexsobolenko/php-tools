@@ -1,4 +1,4 @@
-import {Position, TextEditorEdit} from 'vscode';
+import {Position, TextEditorEdit, window} from 'vscode';
 import App from '../app';
 import Property from './property';
 import {
@@ -7,6 +7,7 @@ import {
     A_DOC_SHOW_DESCR,
     A_GS_GENERATE_PHPDOC,
     A_GS_RETURN_SELF,
+    D_REGEX_PROPERTY,
     M_ERROR,
     R_GETTER,
     R_SETTER,
@@ -21,6 +22,41 @@ export default class Resolver {
 
     public constructor(positions: Array<Position>) {
         this.properties = positions.map((position: Position) => new Property(position));
+    }
+
+    /**
+     * @param {string} placeHolder
+     * @returns {Promise<Array<Position>}
+     */
+    public static async selectProperties(placeHolder: string): Promise<Array<Position>> {
+        const {document} = App.instance.editor;
+        const positions: Array<{name: string, position: Position}> = [];
+        for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
+            const lineText = document.lineAt(lineNumber).text;
+            const matches = D_REGEX_PROPERTY.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                const position = new Position(lineNumber, 5);
+                const property = new Property(position);
+                positions.push({
+                    name: property.name,
+                    position,
+                });
+            }
+        }
+
+        const selectedProps = await window.showQuickPick(positions.map((p) => p.name), {
+            canPickMany: true,
+            placeHolder,
+        });
+
+        const result: Array<Position> = [];
+        positions.forEach((position) => {
+            if (selectedProps?.includes(position.name)) {
+                result.push(position.position);
+            }
+        });
+
+        return result;
     }
 
     /**

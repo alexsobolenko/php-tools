@@ -27,6 +27,9 @@ Tools for better PHP development
 - Advanced PHP Tools. Insert getter
 - Advanced PHP Tools. Insert setter
 - Advanced PHP Tools. Insert getter and setter
+- Advanced PHP Tools. Insert getter (Wizard)
+- Advanced PHP Tools. Insert setter (Wizard)
+- Advanced PHP Tools. Insert getter and setter (Wizard)
 
 ## Feature #2 - Generate class, interface, trait and enum
 
