@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.6] - 2024-02-18
+
+### Added
+
+- Feature #1 updated - use wizard to select properties for create getters and setters
+
 ## [0.2.5] - 2024-02-17
 
 ### Added
