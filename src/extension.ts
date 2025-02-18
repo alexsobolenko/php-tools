@@ -14,7 +14,10 @@ import {
     CMD_GENERATE_TRAIT,
     CMD_INSERT_GETTER,
     CMD_INSERT_GETTER_SETTER,
+    CMD_INSERT_GETTER_SETTER_WIZARD,
+    CMD_INSERT_GETTER_WIZARD,
     CMD_INSERT_SETTER,
+    CMD_INSERT_SETTER_WIZARD,
     F_ABSTRACT_CLASS,
     F_CLASS,
     F_ENUM,
@@ -41,6 +44,21 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_SETTER, () => {
         const position = App.instance.editor.selection.active;
         const resolver = new Resolver([position]);
+        resolver.render([R_GETTER, R_SETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_WIZARD, async () => {
+        const positions = await Resolver.selectProperties('Select properties to generate getters');
+        const resolver = new Resolver(positions);
+        resolver.render([R_GETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(CMD_INSERT_SETTER_WIZARD, async () => {
+        const positions = await Resolver.selectProperties('Select properties to generate setters');
+        const resolver = new Resolver(positions);
+        resolver.render([R_SETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_SETTER_WIZARD, async () => {
+        const positions = await Resolver.selectProperties('Select properties to generate getters and setters');
+        const resolver = new Resolver(positions);
         resolver.render([R_GETTER, R_SETTER]);
     }));
 
