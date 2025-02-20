@@ -1,7 +1,7 @@
-import {Class, Method, Name, Namespace, Parameter, UseGroup, UseItem} from 'php-parser';
+import {Class, Method, Name, Namespace, Parameter, UseItem} from 'php-parser';
 import App from '../../app';
 import {IParameter} from '../../interfaces';
-import {Declaration, TextDocument} from 'vscode';
+import {TextDocument} from 'vscode';
 import Block from './block';
 import {
     A_DOC_LINES_AFTER_DESCR,
@@ -87,11 +87,15 @@ export default class FunctionBlock extends Block {
 
             this.findThrows(func.body);
 
-            const funcType = func.type as any;
-            // eslint-disable-next-line max-len
-            const types = funcType ? (func.type.kind === 'uniontype' ? funcType.types.map((t: Name) => t.name) : [funcType.name]) : ['mixed'];
-            if (func.nullable && !types.includes('void') && !types.includes('null')) types.push('null');
-            this._returnHint = types.join('|');
+            if (this._name === '__construct') {
+                this._returnHint = 'void';
+            } else {
+                const funcType = func.type as any;
+                // eslint-disable-next-line max-len
+                const types = funcType ? (func.type.kind === 'uniontype' ? funcType.types.map((t: Name) => t.name) : [funcType.name]) : ['mixed'];
+                if (func.nullable && !types.includes('void') && !types.includes('null')) types.push('null');
+                this._returnHint = types.join('|');
+            }
         } catch (error: any) {
             this._returnHint = '';
             this._params = [];
@@ -167,12 +171,21 @@ export default class FunctionBlock extends Block {
         if (!body || !('children' in body)) return;
 
         body.children.forEach((node: any) => {
-            if (node.kind === 'throw') {
-                const name = node.what.name || node.what.what.name;
-                if (!this._throws.includes(name)) this._throws.push(name);
-            } else {
-                if (node.body) this.findThrows(node.body);
-                if (node.alternate) this.findThrows(node.alternate);
+            const item = node.kind === 'expressionstatement' ? node.expression : node;
+            switch (item.kind) {
+                case 'throw':
+                    const name = item.what.name || item.what.what.name;
+                    if (!this._throws.includes(name)) {
+                        this._throws.push(name);
+                    }
+                    break;
+                default:
+                    if (node.body) {
+                        this.findThrows(node.body);
+                    }
+                    if (node.alternate) {
+                        this.findThrows(node.alternate);
+                    }
             }
         });
     }
