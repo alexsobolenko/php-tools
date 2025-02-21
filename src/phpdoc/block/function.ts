@@ -180,11 +180,16 @@ export default class FunctionBlock extends Block {
                     }
                     break;
                 default:
-                    if (node.body) {
-                        this.findThrows(node.body);
+                    if (item.body) {
+                        this.findThrows(item.body);
                     }
-                    if (node.alternate) {
-                        this.findThrows(node.alternate);
+                    if (item.alternate) {
+                        this.findThrows(item.alternate);
+                    }
+                    if (item.catches) {
+                        item.catches.forEach((ctch: any) => {
+                            this.findThrows(ctch.body);
+                        });
                     }
             }
         });

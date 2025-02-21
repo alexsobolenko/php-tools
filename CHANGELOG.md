@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.2.8] - 2024-02-21
+
+### Changed
+
+- Optimized
+- Fixed errors
+
 ## [0.2.7] - 2024-02-20
 
 ### Changed
