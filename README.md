@@ -4,7 +4,8 @@ Tools for better PHP development
 
 ## Config
 
-### Available parameters:
+### Extension parameters
+
 - `advanced-php-tools.builder-strict-types` - Generate objects with `declare(strict_types=1)` (default: `true`)
 - `advanced-php-tools.builder-generate-phpdoc` - Generate objects with phpdoc (default: `false`)
 - `advanced-php-tools.setter-return-self` - Return class instance in setter instead of void (default: `false`)
@@ -23,7 +24,8 @@ Tools for better PHP development
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/getters-setters.gif)
 
-### Available commands:
+### Feature #1 commands
+
 - Advanced PHP Tools. Insert getter
 - Advanced PHP Tools. Insert setter
 - Advanced PHP Tools. Insert getter and setter
@@ -35,7 +37,8 @@ Tools for better PHP development
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/fabric.gif)
 
-### Available commands:
+### Feature #2 commands
+
 - Advanced PHP Tools. Generate class
 - Advanced PHP Tools. Generate abstract class
 - Advanced PHP Tools. Generate final class
@@ -47,12 +50,14 @@ Tools for better PHP development
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/phpdoc.gif)
 
-### Available commands:
+### Feature #3 commands
+
 - Advanced PHP Tools. Generate PHPDoc (default key: `ctrl+enter`)
 
 ## Feature #4 - Generate constructor from selected properties
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/construct.gif)
 
-### Available commands:
+### Feature #4 commands
+
 - Advanced PHP Tools. Generate class constructor

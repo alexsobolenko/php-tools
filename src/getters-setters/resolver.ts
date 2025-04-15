@@ -1,6 +1,5 @@
 import {Position, TextEditorEdit, window} from 'vscode';
 import App from '../app';
-import Property from './property';
 import {
     A_DOC_LINES_AFTER_DESCR,
     A_DOC_LINES_BEFORE_RETURN,
@@ -13,21 +12,15 @@ import {
     R_SETTER,
     R_UNDEFINED_PROPERTY,
 } from '../constants';
+import Property from './property';
 
 export default class Resolver {
-    /**
-     * @type {Array<Property>}
-     */
     public properties: Array<Property>;
 
     public constructor(positions: Array<Position>) {
         this.properties = positions.map((position: Position) => new Property(position));
     }
 
-    /**
-     * @param {string} placeHolder
-     * @returns {Promise<Array<Position>}
-     */
     public static async selectProperties(placeHolder: string): Promise<Array<Position>> {
         const {document} = App.instance.editor;
         const positions: Array<{name: string, position: Position}> = [];
@@ -59,46 +52,36 @@ export default class Resolver {
         return result;
     }
 
-    /**
-     * @param {Property} property
-     * @returns {string}
-     */
     public getterTemplate(property: Property): string {
         if (property.name === R_UNDEFINED_PROPERTY) return '';
-
-        App.instance.showMessage(`Getter for property '${property.name}' created.`);
 
         const fcnName = property.getFunction(R_GETTER);
 
         const generatePhpdoc = !!App.instance.config(A_GS_GENERATE_PHPDOC, true);
-        let phpdoc = '\n';
+        let phpdoc = '';
         if (generatePhpdoc) {
-            const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
-            const description = showDescription ? `${property.tab} * Getter for ${property.name}\n` : '';
+            const data = [];
 
-            const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-            const afterDescription = App.instance.multiplyString(`${property.tab} *\n`, emptyLinesAfterDescription);
+            if (!!App.instance.config(A_DOC_SHOW_DESCR, false)) {
+                data.push(`Getter for ${property.name}`);
+                for (let i = 0; i < App.instance.config(A_DOC_LINES_AFTER_DESCR, 0); i++) {
+                    data.push('');
+                }
+            }
 
-            phpdoc = `\n${property.tab}/**\n${description}${afterDescription}`
-                + `${property.tab} * @return ${property.hint}\n`
-                + `${property.tab} */\n`;
+            data.push(`@return ${property.hint}`);
+            phpdoc = App.instance.utils.arrayToPhpdoc(data, property.tab);
         }
 
-        return `${phpdoc}`
+        return `\n${phpdoc}`
             + `${property.tab}public function ${fcnName}(): ${property.type}\n`
             + `${property.tab}{\n`
             + `${property.tab}${property.tab}return $this->${property.name};\n`
             + `${property.tab}}\n`;
     }
 
-    /**
-     * @param {Property} property
-     * @returns {string}
-     */
     public setterTemplate(property: Property): string {
         if (property.name === R_UNDEFINED_PROPERTY) return '';
-
-        App.instance.showMessage(`Setter for property '${property.name}' created.`);
 
         const fcnName = property.getFunction(R_SETTER);
 
@@ -107,26 +90,30 @@ export default class Resolver {
         const returnInstructions = returnSelf ? `\n${property.tab}${property.tab}return $this;\n` : '';
 
         const generatePhpdoc = !!App.instance.config(A_GS_GENERATE_PHPDOC, true);
-        let phpdoc = '\n';
-
+        let phpdoc = '';
         if (generatePhpdoc) {
-            const returnHint = returnSelf ? `${property.tab} * @return ${property.className}\n` : '';
+            const data = [];
 
-            const showDescription = !!App.instance.config(A_DOC_SHOW_DESCR, false);
-            const description = showDescription ? `${property.tab} * Getter for ${property.name}\n` : '';
+            if (!!App.instance.config(A_DOC_SHOW_DESCR, false)) {
+                data.push(`Getter for ${property.name}`);
+                for (let i = 0; i < App.instance.config(A_DOC_LINES_AFTER_DESCR, 0); i++) {
+                    data.push('');
+                }
+            }
 
-            const emptyLinesAfterDescription = showDescription ? App.instance.config(A_DOC_LINES_AFTER_DESCR, 0) : 0;
-            const afterDescription = App.instance.multiplyString(`${property.tab} *\n`, emptyLinesAfterDescription);
+            data.push(`@param ${property.hint} $${property.name}`);
 
-            const emptyLinesBeforeReturn = returnSelf ? App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0) : 0;
-            const beforeReturn = App.instance.multiplyString(`${property.tab} *\n`, emptyLinesBeforeReturn);
+            if (returnSelf) {
+                for (let i = 0; i < App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0); i++) {
+                    data.push('');
+                }
+                data.push(`@return ${property.className}`);
+            }
 
-            phpdoc = `\n${property.tab}/**\n${description}${afterDescription}`
-                + `${property.tab} * @param ${property.hint} $${property.name}\n`
-                + `${beforeReturn}${returnHint}${property.tab} */\n`;
+            phpdoc = App.instance.utils.arrayToPhpdoc(data, property.tab);
         }
 
-        return `${phpdoc}`
+        return `\n${phpdoc}`
             + `${property.tab}public function `
             + `${fcnName}(${property.type} $${property.name}): ${returnType}\n`
             + `${property.tab}{\n`
@@ -134,9 +121,6 @@ export default class Resolver {
             + `${property.tab}}\n`;
     }
 
-    /**
-     * @param {Array<string>} items
-     */
     public render(items: Array<string>) {
         const templates: Array<string> = [];
         this.properties.forEach((property: Property) => {
@@ -175,7 +159,7 @@ export default class Resolver {
                 edit.replace(new Position(insertLine.lineNumber, 0), templates.join(''));
             });
         } catch (error: any) {
-            App.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
+            App.instance.utils.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
         }
     }
 }

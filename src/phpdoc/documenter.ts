@@ -1,10 +1,5 @@
 import {Position, TextEditorEdit} from 'vscode';
 import App from '../app';
-import Block from './block/block';
-import ClassBlock from './block/class';
-import ConstantBlock from './block/constant';
-import FunctionBlock from './block/function';
-import PropertyBlock from './block/property';
 import {
     D_REGEX_CLASS,
     D_REGEX_CONSTANT,
@@ -12,16 +7,11 @@ import {
     D_REGEX_PROPERTY,
     M_ERROR,
 } from '../constants';
+import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock} from './block';
 
 export default class Documenter {
-    /**
-     * @type {Block}
-     */
     private _block: Block;
 
-    /**
-     * @param {Position} position
-     */
     public constructor(position: Position) {
         const {text} = App.instance.editor.document.lineAt(position.line);
         if (text.match(D_REGEX_CLASS)) {
@@ -46,7 +36,7 @@ export default class Documenter {
                 edit.replace(new Position(this._block.startLine, 0), template);
             });
         } catch (error: any) {
-            App.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
+            App.instance.utils.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
         }
     }
 }
