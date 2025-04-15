@@ -10,49 +10,17 @@ import {
 } from '../constants';
 
 export default class File {
-    /**
-     * @type {string}
-     */
-    private _name: string;
+    public name: string;
+    public namespace: string;
+    public type: string;
 
-    /**
-     * @type {string}
-     */
-    private _namespace: string;
-
-    /**
-     * @type {string}
-     */
-    private _type: string;
-
-    /**
-     * @param {string} fileName
-     * @param {string} type
-     */
     public constructor(fileName: string, type: string) {
-        const nameData = App.instance.splitPath(fileName);
-        this._namespace = App.instance.pathToNamespace(nameData[0]);
-        this._name = nameData[1].replace('.php', '');
-        this._type = type;
+        const nameData = App.instance.utils.splitPath(fileName);
+        this.namespace = App.instance.utils.pathToNamespace(nameData[0]);
+        this.name = nameData[1].replace('.php', '');
+        this.type = type;
     }
 
-    /**
-     * @returns {string}
-     */
-    public get name(): string {
-        return this._name;
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get namespace(): string {
-        return this._namespace;
-    }
-
-    /**
-     * @returns {string}
-     */
     public get keyword(): string {
         const data: {[k: string]: string} = {
             [F_ABSTRACT_CLASS]: 'abstract class',
@@ -63,6 +31,6 @@ export default class File {
             [F_TRAIT]: 'trait',
         };
 
-        return data[this._type] || F_UNDEFINED_TYPE;
+        return data[this.type] || F_UNDEFINED_TYPE;
     }
 }

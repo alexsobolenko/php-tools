@@ -1,19 +1,13 @@
 import {Position, TextEditorEdit} from 'vscode';
 import App from '../app';
-import File from './file';
 import {A_FAB_GENERATE_PHPDOC, A_FAB_STRICT_TYPES, F_UNDEFINED_TYPE} from '../constants';
+import File from './file';
 
 export default class Builder {
-    /**
-     * @type {File}
-     */
-    private _file: File;
+    public file: File;
 
-    /**
-     * @param {string} type
-     */
     constructor(type: string) {
-        this._file = new File(App.instance.editor.document.fileName, type);
+        this.file = new File(App.instance.editor.document.fileName, type);
     }
 
     public render() {
@@ -27,15 +21,12 @@ export default class Builder {
                 edit.replace(new Position(0, 0), template);
             });
         } catch (error: any) {
-            App.instance.showMessage(`Error generating object: '${error.message}'.`, 'error');
+            App.instance.utils.showMessage(`Error generating object: '${error.message}'.`, 'error');
         }
     }
 
-    /**
-     * @returns {string}
-     */
     private template(): string {
-        const {keyword} = this._file;
+        const {keyword} = this.file;
         if (keyword === F_UNDEFINED_TYPE) {
             return '';
         }
@@ -44,12 +35,12 @@ export default class Builder {
         const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
 
         const addPhpdoc = !!App.instance.config(A_FAB_GENERATE_PHPDOC, false);
-        const name = `${App.instance.capitalizeFirstCharTrimmed(keyword)} ${this._file.name}`;
-        const phpdoc = addPhpdoc ? `/**\n * ${name} ${this._file.name}\n */\n` : '';
+        const name = `${App.instance.utils.capitalizeFirstCharTrimmed(keyword)} ${this.file.name}`;
+        const phpdoc = addPhpdoc ? App.instance.utils.arrayToPhpdoc([`${name} ${this.file.name}`]) : '';
 
         return `<?php\n\n${strictTypes}`
-            + `namespace ${this._file.namespace};\n\n`
-            + `${phpdoc}${keyword} ${this._file.name}\n`
+            + `namespace ${this.file.namespace};\n\n`
+            + `${phpdoc}${keyword} ${this.file.name}\n`
             + '{\n}\n';
     }
 }

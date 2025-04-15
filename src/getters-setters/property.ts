@@ -4,45 +4,20 @@ import App from '../app';
 import {D_REGEX_CLASS, M_ERROR, R_SETTER, R_UNDEFINED_PROPERTY} from '../constants';
 
 export default class Property {
-    /**
-     * @type {string}
-     */
-    private _name: string;
+    public name: string;
+    public tab: string;
+    public type: string|null;
+    public hint: string|null;
+    public className: string = 'self';
 
-    /**
-     * @type {string|null}
-     */
-    private _tab: string|null;
-
-    /**
-     * @type {string|null}
-     */
-    private _type: string|null;
-
-    /**
-     * @type {string|null}
-     */
-    private _hint: string|null;
-
-    /**
-     * @type {string}
-     */
-    private _className: string;
-
-    /**
-     * @param {Position} position
-     */
     public constructor(position: Position) {
         const activeLine = App.instance.editor.document.lineAt(position.line);
-
-        this._tab = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
-        this._className = 'self';
-
+        this.tab = activeLine.text.substring(0, activeLine.firstNonWhitespaceCharacterIndex);
         for (let i = 0; i < position.line; i++) {
             const text = App.instance.editor.document.lineAt(i).text as string;
             if (text.includes('class')) {
                 const matches = App.instance.editor.document.lineAt(i).text.match(D_REGEX_CLASS);
-                if (matches && matches.length > 2) this._className = matches[2] as string;
+                if (matches && matches.length > 2) this.className = matches[2] as string;
             }
         }
 
@@ -77,67 +52,28 @@ export default class Property {
             if (prop.nullable && !varTypes.includes('null')) varTypes.push('null');
 
             const joinedVarTypes = varTypes.join('|');
-            this._hint = joinedVarTypes;
+            this.hint = joinedVarTypes;
             const index = varTypes.indexOf('null');
             if (index === -1) {
-                this._type = joinedVarTypes;
+                this.type = joinedVarTypes;
             } else {
                 varTypes.splice(index, 1);
-                this._type = `?${varTypes.join('|')}`;
+                this.type = `?${varTypes.join('|')}`;
             }
 
-            this._name = (prop.name as Name).name;
+            this.name = (prop.name as Name).name;
         } catch (error: any) {
-            this._name = R_UNDEFINED_PROPERTY;
-            this._type = null;
-            this._hint = null;
-            App.instance.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
+            this.name = R_UNDEFINED_PROPERTY;
+            this.type = null;
+            this.hint = null;
+            App.instance.utils.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
         }
     }
 
-    /**
-     * @param {string} type
-     * @returns {string}
-     */
     public getFunction(type: string): string {
-        const isBoolHint = ['bool', 'boolean'].includes(this._hint ?? '');
+        const isBoolHint = ['bool', 'boolean'].includes(this.hint ?? '');
         const prefix = type === R_SETTER ? 'set' : (isBoolHint ? 'is' : 'get');
 
-        return prefix + App.instance.capitalizeFirstCharTrimmed(this._name);
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get name(): string {
-        return this._name;
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get type(): string {
-        return this._type || 'mixed';
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get hint(): string {
-        return this._hint || 'mixed';
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get tab(): string {
-        return this._tab || '';
-    }
-
-    /**
-     * @returns {string}
-     */
-    public get className(): string {
-        return this._className;
+        return prefix + App.instance.utils.capitalizeFirstCharTrimmed(this.name);
     }
 }
