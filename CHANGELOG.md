@@ -1,10 +1,16 @@
 # Change Log
 
+## [0.3.1] - 2025-04-30
+
+### Added
+
+- Symfony `config/services.yml` support
+
 ## [0.3.0] - 2025-04-15
 
 ### Added
 
-- Widows support
+- Windows support
 
 ### Changed
 

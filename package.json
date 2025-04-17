@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -32,7 +32,9 @@
         "trait",
         "enum"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onLanguage:php"
+    ],
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
@@ -169,7 +171,11 @@
                     "description": "Max length of constructor arguments when it on one line"
                 }
             }
-        }
+        },
+        "languages": [{
+            "id": "php",
+            "extensions": [".php"]
+        }]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
@@ -188,7 +194,8 @@
         "@vscode/test-cli": "^0.0.10",
         "@vscode/test-electron": "^2.4.1",
         "eslint": "^9.16.0",
-        "typescript": "^5.7.2"
+        "typescript": "^5.7.2",
+        "yaml": "^2.7.1"
     },
     "dependencies": {
         "php-parser": "^3.2.2"
