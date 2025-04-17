@@ -1,4 +1,4 @@
-import {commands, ExtensionContext} from 'vscode';
+import {commands, ExtensionContext, languages, Uri, workspace} from 'vscode';
 import App from './app';
 import Resolver from './getters-setters/resolver';
 import Builder from './fabric/builder';
@@ -29,7 +29,7 @@ import {
 } from './constants';
 import Construct from './constructor/construct';
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
     /* getters-setters */
     context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER, () => {
         const position = App.instance.editor.selection.active;
@@ -101,6 +101,34 @@ export function activate(context: ExtensionContext) {
         await construct.fill();
         construct.render();
     }));
+
+    /* symfony */
+    const candidates = ['config/services.yaml', 'config/services.yml', 'app/config/services.yaml'];
+    let servicesYamlUri = null;
+    for (const candidate of candidates) {
+        try {
+            const uri = Uri.joinPath(workspace.workspaceFolders![0].uri, candidate);
+            await workspace.fs.stat(uri);
+            servicesYamlUri = uri;
+            break;
+        } catch (e) {
+            servicesYamlUri = null;
+        }
+    }
+    if (servicesYamlUri !== null) {
+        await App.instance.updateSymfonyServices(servicesYamlUri);
+    }
+
+    const watcher = workspace.createFileSystemWatcher('**/config/services.{yml,yaml}');
+    watcher.onDidChange((uri) => App.instance.updateSymfonyServices(uri));
+    watcher.onDidCreate((uri) => App.instance.updateSymfonyServices(uri));
+    context.subscriptions.push(watcher);
+    context.subscriptions.push(
+        languages.registerCodeLensProvider({language: 'php'}, App.instance.symfonyServicesProvider),
+    );
+    context.subscriptions.push(
+        languages.registerCodeLensProvider({language: 'php'}, App.instance.symfonyTemplatesProvider),
+    );
 }
 
 export function deactivate() {}
