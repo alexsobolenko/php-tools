@@ -21,7 +21,7 @@ export default class SymfonyTemplatesProvider implements CodeLensProvider {
                         document.positionAt(match.index! + match[0].length),
                     );
                     lenses.push(new CodeLens(range, {
-                        title: 'Open Twig',
+                        title: '📝 Open twig template',
                         command: 'vscode.open',
                         arguments: [Uri.file(fullPath)],
                     }));
