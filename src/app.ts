@@ -2,6 +2,7 @@ import {Location, Position, TextEditor, Uri, WorkspaceConfiguration, window, wor
 import * as yaml from 'yaml';
 import {Utils} from './utils';
 import SymfonyServicesProvider from './provider/symfony_services_provider';
+import SymfonyTemplatesProvider from './provider/symfony_templates_provider';
 
 export default class App {
     private static _instance: App;
@@ -10,6 +11,7 @@ export default class App {
     private _composerData: {[k: string]: any};
     private _symfonyServicesProvider: SymfonyServicesProvider;
     private _symfonyServicesMap: Map<string, Location>;
+    private _symfonyTemplatesProvider: SymfonyTemplatesProvider;
 
     private constructor() {
         this._utils = Utils.get();
@@ -17,6 +19,7 @@ export default class App {
         this._composerData = this._utils.composerData();
         this._symfonyServicesProvider = new SymfonyServicesProvider();
         this._symfonyServicesMap = new Map();
+        this._symfonyTemplatesProvider = new SymfonyTemplatesProvider();
     }
 
     public static get instance(): App {
@@ -66,6 +69,10 @@ export default class App {
 
     public get symfonyServicesProvider(): SymfonyServicesProvider {
         return this._symfonyServicesProvider;
+    }
+
+    public get symfonyTemplatesProvider(): SymfonyTemplatesProvider {
+        return this._symfonyTemplatesProvider;
     }
 
     public async updateSymfonyServices(uri: Uri): Promise<void> {

@@ -102,7 +102,7 @@ export async function activate(context: ExtensionContext) {
         construct.render();
     }));
 
-    /* symfony services.yml */
+    /* symfony */
     const candidates = ['config/services.yaml', 'config/services.yml', 'app/config/services.yaml'];
     let servicesYamlUri = null;
     for (const candidate of candidates) {
@@ -125,6 +125,9 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(watcher);
     context.subscriptions.push(
         languages.registerCodeLensProvider({language: 'php'}, App.instance.symfonyServicesProvider),
+    );
+    context.subscriptions.push(
+        languages.registerCodeLensProvider({language: 'php'}, App.instance.symfonyTemplatesProvider),
     );
 }
 
