@@ -22,7 +22,7 @@ Tools for better PHP development
 
 ## Feature #1 - Generate getter and setter for class property
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/getters-setters.gif)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/getters-setters.gif)
 
 ### Feature #1 commands
 
@@ -35,7 +35,7 @@ Tools for better PHP development
 
 ## Feature #2 - Generate class, interface, trait and enum
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/fabric.gif)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/fabric.gif)
 
 ### Feature #2 commands
 
@@ -48,7 +48,7 @@ Tools for better PHP development
 
 ## Feature #3 - Generate PHPDoc
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/phpdoc.gif)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/phpdoc.gif)
 
 ### Feature #3 commands
 
@@ -56,7 +56,7 @@ Tools for better PHP development
 
 ## Feature #4 - Generate constructor from selected properties
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/construct.gif)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/construct.gif)
 
 ### Feature #4 commands
 
@@ -66,8 +66,12 @@ Tools for better PHP development
 
 - Open class configuration in `config/services.yaml`
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/symfony-services.gif)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services.gif)
+
+- Open class declaration from `config/services.yaml`
+
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services-yaml.gif)
 
 - Open twig template
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/symfony-templates.gif)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-templates.gif)

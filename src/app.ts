@@ -2,6 +2,7 @@ import {Location, Position, TextEditor, Uri, WorkspaceConfiguration, window, wor
 import * as yaml from 'yaml';
 import {Utils} from './utils';
 import SymfonyServicesProvider from './provider/symfony_services_provider';
+import SymfonyServicesYamlProvider from './provider/symfony_services_yaml_provider';
 import SymfonyTemplatesProvider from './provider/symfony_templates_provider';
 
 export default class App {
@@ -10,6 +11,7 @@ export default class App {
     private _config: WorkspaceConfiguration;
     private _composerData: {[k: string]: any};
     private _symfonyServicesProvider: SymfonyServicesProvider;
+    private _symfonyServicesYamlProvider: SymfonyServicesYamlProvider;
     private _symfonyServicesMap: Map<string, Location>;
     private _symfonyTemplatesProvider: SymfonyTemplatesProvider;
 
@@ -18,6 +20,7 @@ export default class App {
         this._config = workspace.getConfiguration('advanced-php-tools');
         this._composerData = this._utils.composerData();
         this._symfonyServicesProvider = new SymfonyServicesProvider();
+        this._symfonyServicesYamlProvider = new SymfonyServicesYamlProvider();
         this._symfonyServicesMap = new Map();
         this._symfonyTemplatesProvider = new SymfonyTemplatesProvider();
     }
@@ -69,6 +72,10 @@ export default class App {
 
     public get symfonyServicesProvider(): SymfonyServicesProvider {
         return this._symfonyServicesProvider;
+    }
+
+    public get symfonyServicesYamlProvider(): SymfonyServicesYamlProvider {
+        return this._symfonyServicesYamlProvider;
     }
 
     public get symfonyTemplatesProvider(): SymfonyTemplatesProvider {
