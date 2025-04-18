@@ -54,16 +54,16 @@
                 "title": "Advanced PHP Tools. Insert getter and setter"
             },
             {
-                "command": "advanced-php-tools.insert-getter-wizard",
-                "title": "Advanced PHP Tools. Insert getter (Wizard)"
+                "command": "advanced-php-tools.insert-getter-master",
+                "title": "Advanced PHP Tools. Insert getter (Master)"
             },
             {
-                "command": "advanced-php-tools.insert-setter-wizard",
-                "title": "Advanced PHP Tools. Insert setter (Wizard)"
+                "command": "advanced-php-tools.insert-setter-master",
+                "title": "Advanced PHP Tools. Insert setter (Master)"
             },
             {
-                "command": "advanced-php-tools.insert-getter-setter-wizard",
-                "title": "Advanced PHP Tools. Insert getter and setter (Wizard)"
+                "command": "advanced-php-tools.insert-getter-setter-master",
+                "title": "Advanced PHP Tools. Insert getter and setter (Master)"
             },
             {
                 "command": "advanced-php-tools.generate-class",
@@ -94,8 +94,8 @@
                 "title": "Advanced PHP Tools. Generate PHPDoc"
             },
             {
-                "command": "advanced-php-tools.generate-php-doc-wizard",
-                "title": "Advanced PHP Tools. Generate PHPDoc (Wizard)"
+                "command": "advanced-php-tools.generate-php-doc-master",
+                "title": "Advanced PHP Tools. Generate PHPDoc (Master)"
             },
             {
                 "command": "advanced-php-tools.generate-constructor",

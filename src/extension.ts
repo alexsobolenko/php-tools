@@ -11,14 +11,14 @@ import {
     CMD_GENERATE_FINAL_CLASS,
     CMD_GENERATE_INTERFACE,
     CMD_GENERATE_PHPDOC,
-    CMD_GENERATE_PHPDOC_WIZARD,
+    CMD_GENERATE_PHPDOC_MASTER,
     CMD_GENERATE_TRAIT,
     CMD_INSERT_GETTER,
     CMD_INSERT_GETTER_SETTER,
-    CMD_INSERT_GETTER_SETTER_WIZARD,
-    CMD_INSERT_GETTER_WIZARD,
+    CMD_INSERT_GETTER_SETTER_MASTER,
+    CMD_INSERT_GETTER_MASTER,
     CMD_INSERT_SETTER,
-    CMD_INSERT_SETTER_WIZARD,
+    CMD_INSERT_SETTER_MASTER,
     F_ABSTRACT_CLASS,
     F_CLASS,
     F_ENUM,
@@ -47,17 +47,17 @@ export async function activate(context: ExtensionContext) {
         const resolver = new Resolver([position]);
         resolver.render([R_GETTER, R_SETTER]);
     }));
-    context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_WIZARD, async () => {
+    context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_MASTER, async () => {
         const positions = await Resolver.selectProperties('Select properties to generate getters');
         const resolver = new Resolver(positions);
         resolver.render([R_GETTER]);
     }));
-    context.subscriptions.push(commands.registerCommand(CMD_INSERT_SETTER_WIZARD, async () => {
+    context.subscriptions.push(commands.registerCommand(CMD_INSERT_SETTER_MASTER, async () => {
         const positions = await Resolver.selectProperties('Select properties to generate setters');
         const resolver = new Resolver(positions);
         resolver.render([R_SETTER]);
     }));
-    context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_SETTER_WIZARD, async () => {
+    context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER_SETTER_MASTER, async () => {
         const positions = await Resolver.selectProperties('Select properties to generate getters and setters');
         const resolver = new Resolver(positions);
         resolver.render([R_GETTER, R_SETTER]);
@@ -95,7 +95,7 @@ export async function activate(context: ExtensionContext) {
         const documenter = new Documenter([position]);
         documenter.render();
     }));
-    context.subscriptions.push(commands.registerCommand(CMD_GENERATE_PHPDOC_WIZARD, async () => {
+    context.subscriptions.push(commands.registerCommand(CMD_GENERATE_PHPDOC_MASTER, async () => {
         const positions = await Documenter.selectBlocks('Select blocks to generate phpdocs');
         const documenter = new Documenter(positions);
         documenter.render();

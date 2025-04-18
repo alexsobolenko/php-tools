@@ -46,7 +46,7 @@
 
 ### Added
 
-- Feature #1 updated - use wizard to select properties for create getters and setters
+- Feature #1 updated - use master to select properties for create getters and setters
 
 ## [0.2.5] - 2025-02-17
 

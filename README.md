@@ -29,9 +29,9 @@ Tools for better PHP development
 - Advanced PHP Tools. Insert getter
 - Advanced PHP Tools. Insert setter
 - Advanced PHP Tools. Insert getter and setter
-- Advanced PHP Tools. Insert getter (Wizard)
-- Advanced PHP Tools. Insert setter (Wizard)
-- Advanced PHP Tools. Insert getter and setter (Wizard)
+- Advanced PHP Tools. Insert getter (Master)
+- Advanced PHP Tools. Insert setter (Master)
+- Advanced PHP Tools. Insert getter and setter (Master)
 
 ## Feature #2 - Generate class, interface, trait and enum
 
@@ -52,7 +52,8 @@ Tools for better PHP development
 
 ### Feature #3 commands
 
-- Advanced PHP Tools. Generate PHPDoc (default key: `ctrl+enter`)
+- Advanced PHP Tools. Generate PHPDoc [default key: `ctrl+enter`]
+- Advanced PHP Tools. Generate PHPDoc (Master)
 
 ## Feature #4 - Generate constructor from selected properties
 
