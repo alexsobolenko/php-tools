@@ -94,6 +94,10 @@
                 "title": "Advanced PHP Tools. Generate PHPDoc"
             },
             {
+                "command": "advanced-php-tools.generate-php-doc-wizard",
+                "title": "Advanced PHP Tools. Generate PHPDoc (Wizard)"
+            },
+            {
                 "command": "advanced-php-tools.generate-constructor",
                 "title": "Advanced PHP Tools. Generate class constructor"
             }

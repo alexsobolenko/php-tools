@@ -1,4 +1,4 @@
-import {Position, Range, TextDocument, TextEditorEdit} from 'vscode';
+import {Position, Range, TextDocument, TextEditorEdit, window} from 'vscode';
 import App from '../app';
 import {
     D_REGEX_CLASS,
@@ -11,44 +11,111 @@ import {
 import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock} from './block';
 
 export default class Documenter {
-    public block: Block|null;
+    public blocks: Array<Block>;
 
-    public constructor(position: Position) {
+    public constructor(positions: Array<Position>) {
+        this.blocks = [];
         const {document} = App.instance.editor;
-        if (this.hasExistingPhpDoc(document, position)) {
-            App.instance.utils.showMessage('PHPDOC already exists', M_INFO);
-            this.block = null;
-
-            return;
-        }
-
-        const {text} = App.instance.editor.document.lineAt(position.line);
-        if (text.match(D_REGEX_CLASS)) {
-            this.block = new ClassBlock();
-        } else if (text.match(D_REGEX_PROPERTY)) {
-            this.block = new PropertyBlock();
-        } else if (text.match(D_REGEX_CONSTANT)) {
-            this.block = new ConstantBlock();
-        } else if (text.match(D_REGEX_FUNCTION)) {
-            this.block = new FunctionBlock();
-        } else {
-            this.block = new Block();
+        positions.forEach((p) => {
+            if (!this.hasExistingPhpDoc(document, p)) {
+                const {text} = App.instance.editor.document.lineAt(p.line);
+                if (text.match(D_REGEX_CLASS)) {
+                    this.blocks.push(new ClassBlock(p));
+                } else if (text.match(D_REGEX_PROPERTY)) {
+                    this.blocks.push(new PropertyBlock(p));
+                } else if (text.match(D_REGEX_CONSTANT)) {
+                    this.blocks.push(new ConstantBlock(p));
+                } else if (text.match(D_REGEX_FUNCTION)) {
+                    this.blocks.push(new FunctionBlock(p));
+                } else {
+                    this.blocks.push(new Block(p));
+                }
+            }
+        });
+        if (this.blocks.length < 1) {
+            App.instance.utils.showMessage('Phpdoc already exists', M_INFO);
         }
     }
 
     public render() {
-        try {
-            const template = this.block === null ? '' : this.block.template as string;
-            if (template === '') {
-                throw new Error('Missing template to render');
+        const data: Array<{startLine: number, template: string}> = [];
+        this.blocks.forEach((b) => {
+            try {
+                const {template} = b;
+                if (template === '') {
+                    throw new Error('Missing template to render');
+                }
+                data.push({startLine: b.startLine, template});
+            } catch (error: any) {
+                App.instance.utils.showMessage(`${error.message} - in block ${b.name}`, M_ERROR);
+            }
+        });
+        App.instance.editor.edit((edit: TextEditorEdit) => {
+            data.forEach((d) => {
+                edit.replace(new Position(d.startLine, 0), d.template);
+            });
+        });
+    }
+
+    public static async selectBlocks(placeHolder: string): Promise<Array<Position>> {
+        const {document} = App.instance.editor;
+        const positions: Array<{name: string, position: Position}> = [];
+        for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
+            const lineText = document.lineAt(lineNumber).text;
+            let character = null;
+            let name = null;
+            let matches = null;
+            let type = null;
+
+            matches = D_REGEX_CLASS.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                character = 0;
+                name = matches[2] as string;
+                type = App.instance.utils.capitalizeFirstCharTrimmed(matches[1]);
             }
 
-            App.instance.editor.edit((edit: TextEditorEdit) => {
-                edit.replace(new Position(this.block?.startLine || 0, 0), template);
-            });
-        } catch (error: any) {
-            App.instance.utils.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
+            matches = D_REGEX_CONSTANT.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                character = 5;
+                name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
+                type = 'Constant';
+            }
+
+            matches = D_REGEX_PROPERTY.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                character = 5;
+                name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
+                type = 'Property';
+            }
+
+            matches = D_REGEX_FUNCTION.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                character = 5;
+                name = matches[3] as string;
+                type = matches.includes('static') ? 'Static function' : 'Function';
+            }
+
+            if (character !== null && name !== null && type !== null) {
+                positions.push({
+                    name: `${positions.length + 1}. ${name} (${type})`,
+                    position: new Position(lineNumber, character),
+                });
+            }
         }
+
+        const selectedProps = await window.showQuickPick(positions.map((p) => p.name), {
+            canPickMany: true,
+            placeHolder,
+        });
+
+        const result: Array<Position> = [];
+        positions.forEach((position) => {
+            if (selectedProps?.includes(position.name)) {
+                result.push(position.position);
+            }
+        });
+
+        return result;
     }
 
     private hasExistingPhpDoc(document: TextDocument, position: Position): boolean {

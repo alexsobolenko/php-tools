@@ -1,4 +1,4 @@
-import {TextDocument, TextLine} from 'vscode';
+import {Position, TextDocument, TextLine} from 'vscode';
 import {
     Class,
     ClassConstant,
@@ -39,9 +39,7 @@ export class Block {
     public activeLine: TextLine;
     public phpParser: Engine;
 
-    public constructor() {
-        const position = App.instance.editor.selection.active;
-
+    public constructor(position: Position) {
         this.phpParser = new Engine(App.instance.phpParserParams);
         this.type = 'undefined';
         this.name = '';
@@ -63,8 +61,8 @@ export class Block {
 export class ClassBlock extends Block {
     public kind: string;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_CLASS;
         this.kind = '';
@@ -97,8 +95,8 @@ export class ClassBlock extends Block {
 export class ConstantBlock extends Block {
     public constType: string|null;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_CONSTANT;
 
@@ -159,21 +157,20 @@ export class FunctionBlock extends Block {
     public returnHint: string;
     public throws: Array<string>;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_FUNCTION;
         this.params = [];
         this.throws = [];
         this.returnHint = '';
 
-        const startLine = App.instance.editor.selection.active.line;
         const document = App.instance.editor.document as TextDocument;
         const code = document.getText();
 
         let ast = null;
         try {
-            const funcDeclr = document.lineAt(startLine).text.trim();
+            const funcDeclr = document.lineAt(this.startLine).text.trim();
             const matches = funcDeclr.match(D_REGEX_FUNCTION) as Array<any>;
             if (!matches[3]) {
                 throw new Error('Function name not found');
@@ -325,8 +322,8 @@ export class FunctionBlock extends Block {
 export class PropertyBlock extends Block {
     public varHint: string;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_PROPERTY;
 

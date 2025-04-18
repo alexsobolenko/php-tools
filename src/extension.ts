@@ -11,6 +11,7 @@ import {
     CMD_GENERATE_FINAL_CLASS,
     CMD_GENERATE_INTERFACE,
     CMD_GENERATE_PHPDOC,
+    CMD_GENERATE_PHPDOC_WIZARD,
     CMD_GENERATE_TRAIT,
     CMD_INSERT_GETTER,
     CMD_INSERT_GETTER_SETTER,
@@ -91,7 +92,12 @@ export async function activate(context: ExtensionContext) {
     /* phpdoc */
     context.subscriptions.push(commands.registerCommand(CMD_GENERATE_PHPDOC, () => {
         const position = App.instance.editor.selection.active;
-        const documenter = new Documenter(position);
+        const documenter = new Documenter([position]);
+        documenter.render();
+    }));
+    context.subscriptions.push(commands.registerCommand(CMD_GENERATE_PHPDOC_WIZARD, async () => {
+        const positions = await Documenter.selectBlocks('Select blocks to generate phpdocs');
+        const documenter = new Documenter(positions);
         documenter.render();
     }));
 

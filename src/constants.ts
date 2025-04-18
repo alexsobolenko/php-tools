@@ -14,6 +14,7 @@ export const CMD_GENERATE_INTERFACE = 'advanced-php-tools.generate-interface';
 export const CMD_GENERATE_TRAIT = 'advanced-php-tools.generate-trait';
 
 export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
+export const CMD_GENERATE_PHPDOC_WIZARD = 'advanced-php-tools.generate-php-doc-wizard';
 
 export const CMD_GENERATE_CONSTRUCTOR = 'advanced-php-tools.generate-constructor';
 
