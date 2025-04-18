@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.2] - 2025-04-19
+
+### Changed
+
+- Optimized symfony and windows support
+
 ## [0.3.1] - 2025-04-17
 
 ### Added

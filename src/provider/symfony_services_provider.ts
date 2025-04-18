@@ -18,7 +18,7 @@ export default class SymfonyServicesProvider implements CodeLensProvider {
             const serviceLocation = App.instance.getServiceLocation(fqcn);
             if (serviceLocation) {
                 lenses.push(new CodeLens(range, {
-                    title: '📦 Open in services.yaml',
+                    title: '⚙️ Open in services.yaml',
                     command: 'vscode.open',
                     arguments: [serviceLocation.uri, {
                         selection: new Range(serviceLocation.range.start, serviceLocation.range.start),

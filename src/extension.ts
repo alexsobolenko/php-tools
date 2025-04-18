@@ -123,12 +123,18 @@ export async function activate(context: ExtensionContext) {
     watcher.onDidChange((uri) => App.instance.updateSymfonyServices(uri));
     watcher.onDidCreate((uri) => App.instance.updateSymfonyServices(uri));
     context.subscriptions.push(watcher);
-    context.subscriptions.push(
-        languages.registerCodeLensProvider({language: 'php'}, App.instance.symfonyServicesProvider),
-    );
-    context.subscriptions.push(
-        languages.registerCodeLensProvider({language: 'php'}, App.instance.symfonyTemplatesProvider),
-    );
+    context.subscriptions.push(languages.registerCodeLensProvider(
+        {language: 'php'},
+        App.instance.symfonyServicesProvider,
+    ));
+    context.subscriptions.push(languages.registerCodeLensProvider(
+        {language: 'php'},
+        App.instance.symfonyTemplatesProvider,
+    ));
+    context.subscriptions.push(languages.registerCodeLensProvider(
+        {language: 'yaml', pattern: '**/config/services.{yml,yaml}'},
+        App.instance.symfonyServicesYamlProvider,
+    ));
 }
 
 export function deactivate() {}

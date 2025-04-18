@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -30,10 +30,13 @@
         "class",
         "interface",
         "trait",
-        "enum"
+        "enum",
+        "symfony",
+        "twig"
     ],
     "activationEvents": [
-        "onLanguage:php"
+        "onLanguage:php",
+        "onLanguage:yaml"
     ],
     "main": "./out/extension.js",
     "contributes": {
@@ -175,6 +178,9 @@
         "languages": [{
             "id": "php",
             "extensions": [".php"]
+        }, {
+            "id": "yaml",
+            "extensions": [".yml", ".yaml"]
         }]
     },
     "scripts": {
