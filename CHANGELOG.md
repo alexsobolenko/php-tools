@@ -1,6 +1,12 @@
 # Change Log
 
-## [0.3.2] - 2025-04-19
+## [0.3.3] - 2025-04-19
+
+### Changed
+
+- Updated phpdoc generation
+
+## [0.3.2] - 2025-04-18
 
 ### Changed
 
