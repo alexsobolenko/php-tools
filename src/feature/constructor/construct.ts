@@ -1,6 +1,6 @@
 import {Position, TextEditorEdit, window} from 'vscode';
-import App from '../app';
-import {A_DOC_SHOW_DESCR, D_REGEX_CLASS, D_REGEX_PROPERTY, M_ERROR} from '../constants';
+import App from '../../app';
+import {A_DOC_SHOW_DESCR, D_REGEX_CLASS, D_REGEX_PROPERTY, M_ERROR} from '../../constants';
 import Property from '../getters-setters/property';
 
 export default class Construct {
@@ -71,7 +71,7 @@ export default class Construct {
                 edit.replace(new Position(insertLine.lineNumber, 0), template);
             });
         } catch (error: any) {
-            App.instance.utils.showMessage(`Error generating constructor: '${error.message}'.`, M_ERROR);
+            App.instance.showMessage(`Error generating constructor: '${error.message}'.`, M_ERROR);
         }
     }
 
@@ -95,7 +95,7 @@ export default class Construct {
             tab = property.tab as string;
         });
 
-        const phpdoc = App.instance.utils.arrayToPhpdoc(phpdocData, tab);
+        const phpdoc = App.instance.arrayToPhpdoc(phpdocData, tab);
         if (len === 0) {
             return `\n${phpdoc}${tab}public function __construct()\n${tab}{}\n`;
         }

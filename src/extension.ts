@@ -1,8 +1,9 @@
 import {commands, ExtensionContext, languages, Uri, workspace} from 'vscode';
 import App from './app';
-import Resolver from './getters-setters/resolver';
-import Builder from './fabric/builder';
-import Documenter from './phpdoc/documenter';
+import Construct from './feature/constructor/construct';
+import Builder from './feature/fabric/builder';
+import Resolver from './feature/getters-setters/resolver';
+import Documenter from './feature/phpdoc/documenter';
 import {
     CMD_GENERATE_ABSTRACT_CLASS,
     CMD_GENERATE_CLASS,
@@ -28,7 +29,6 @@ import {
     R_GETTER,
     R_SETTER,
 } from './constants';
-import Construct from './constructor/construct';
 
 export async function activate(context: ExtensionContext) {
     /* getters-setters */
@@ -109,38 +109,28 @@ export async function activate(context: ExtensionContext) {
     }));
 
     /* symfony */
+    const watcher = workspace.createFileSystemWatcher('**/config/services.{yml,yaml}');
+    watcher.onDidChange((uri) => App.instance.symfony.updateServices(uri));
+    watcher.onDidCreate((uri) => App.instance.symfony.updateServices(uri));
+    context.subscriptions.push(watcher);
+    App.instance.providers.forEach((p) => {
+        context.subscriptions.push(languages.registerCodeLensProvider(p.selector, p.provider));
+    });
+    await App.instance.symfony.updateServices(await symfonyServicesYamlUri());
+}
+
+async function symfonyServicesYamlUri(): Promise<Uri|null> {
     const candidates = ['config/services.yaml', 'config/services.yml', 'app/config/services.yaml'];
-    let servicesYamlUri = null;
     for (const candidate of candidates) {
         try {
             const uri = Uri.joinPath(workspace.workspaceFolders![0].uri, candidate);
             await workspace.fs.stat(uri);
-            servicesYamlUri = uri;
-            break;
-        } catch (e) {
-            servicesYamlUri = null;
-        }
-    }
-    if (servicesYamlUri !== null) {
-        await App.instance.updateSymfonyServices(servicesYamlUri);
+
+            return uri;
+        } catch (e) {}
     }
 
-    const watcher = workspace.createFileSystemWatcher('**/config/services.{yml,yaml}');
-    watcher.onDidChange((uri) => App.instance.updateSymfonyServices(uri));
-    watcher.onDidCreate((uri) => App.instance.updateSymfonyServices(uri));
-    context.subscriptions.push(watcher);
-    context.subscriptions.push(languages.registerCodeLensProvider(
-        {language: 'php'},
-        App.instance.symfonyServicesProvider,
-    ));
-    context.subscriptions.push(languages.registerCodeLensProvider(
-        {language: 'php'},
-        App.instance.symfonyTemplatesProvider,
-    ));
-    context.subscriptions.push(languages.registerCodeLensProvider(
-        {language: 'yaml', pattern: '**/config/services.{yml,yaml}'},
-        App.instance.symfonyServicesYamlProvider,
-    ));
+    return null;
 }
 
 export function deactivate() {}

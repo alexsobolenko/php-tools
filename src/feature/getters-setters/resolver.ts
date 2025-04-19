@@ -1,5 +1,5 @@
 import {Position, TextEditorEdit, window} from 'vscode';
-import App from '../app';
+import App from '../../app';
 import {
     A_DOC_LINES_AFTER_DESCR,
     A_DOC_LINES_BEFORE_RETURN,
@@ -11,7 +11,7 @@ import {
     R_GETTER,
     R_SETTER,
     R_UNDEFINED_PROPERTY,
-} from '../constants';
+} from '../../constants';
 import Property from './property';
 
 export default class Resolver {
@@ -70,7 +70,7 @@ export default class Resolver {
             }
 
             data.push(`@return ${property.hint}`);
-            phpdoc = App.instance.utils.arrayToPhpdoc(data, property.tab);
+            phpdoc = App.instance.arrayToPhpdoc(data, property.tab);
         }
 
         return `\n${phpdoc}`
@@ -110,7 +110,7 @@ export default class Resolver {
                 data.push(`@return ${property.className}`);
             }
 
-            phpdoc = App.instance.utils.arrayToPhpdoc(data, property.tab);
+            phpdoc = App.instance.arrayToPhpdoc(data, property.tab);
         }
 
         return `\n${phpdoc}`
@@ -159,7 +159,7 @@ export default class Resolver {
                 edit.replace(new Position(insertLine.lineNumber, 0), templates.join(''));
             });
         } catch (error: any) {
-            App.instance.utils.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
+            App.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
         }
     }
 }

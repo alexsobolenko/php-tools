@@ -5,6 +5,7 @@
 ### Changed
 
 - Updated phpdoc generation
+- Refactored
 
 ## [0.3.2] - 2025-04-18
 

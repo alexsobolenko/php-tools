@@ -12,7 +12,7 @@ import {
     PropertyStatement,
     UseItem,
 } from 'php-parser';
-import App from '../app';
+import App from '../../app';
 import {
     A_DOC_LINES_AFTER_DESCR,
     A_DOC_LINES_BEFORE_RETURN,
@@ -27,8 +27,8 @@ import {
     D_TYPE_CONSTANT,
     D_TYPE_PROPERTY,
     M_ERROR,
-} from '../constants';
-import {IParameter} from '../interfaces';
+} from '../../constants';
+import {IParameter} from '../../interfaces';
 
 // * BASE BLOCK CLASS
 export class Block {
@@ -40,7 +40,7 @@ export class Block {
     public phpParser: Engine;
 
     public constructor(position: Position) {
-        this.phpParser = new Engine(App.instance.phpParserParams);
+        this.phpParser = new Engine(App.instance.composer('php-parser-params'));
         this.type = 'undefined';
         this.name = '';
         this.activeLine = App.instance.editor.document.lineAt(position.line);
@@ -80,14 +80,14 @@ export class ClassBlock extends Block {
             this.name = className.name;
             this.kind = klass.kind;
         } catch (error: any) {
-            App.instance.utils.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
     public get template(): string {
-        const name = `${App.instance.utils.capitalizeFirstCharTrimmed(this.kind)} ${this.name}`;
+        const name = `${App.instance.capitalizeFirstCharTrimmed(this.kind)} ${this.name}`;
 
-        return App.instance.utils.arrayToPhpdoc([`${name} description.`], this.tab);
+        return App.instance.arrayToPhpdoc([`${name} description.`], this.tab);
     }
 }
 
@@ -131,7 +131,7 @@ export class ConstantBlock extends Block {
             this.constType = (matches && matches.length >= 3) ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2]) : 'mixed';
         } catch (error: any) {
             this.constType = 'mixed';
-            App.instance.utils.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -147,7 +147,7 @@ export class ConstantBlock extends Block {
 
         data.push(`@var ${this.constType}`);
 
-        return App.instance.utils.arrayToPhpdoc(data, this.tab);
+        return App.instance.arrayToPhpdoc(data, this.tab);
     }
 }
 
@@ -227,7 +227,7 @@ export class FunctionBlock extends Block {
         } catch (error: any) {
             this.returnHint = '';
             this.params = [];
-            App.instance.utils.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
         }
     }
 
@@ -268,7 +268,7 @@ export class FunctionBlock extends Block {
             data.push(`@throws ${v}`);
         });
 
-        return App.instance.utils.arrayToPhpdoc(data, this.tab);
+        return App.instance.arrayToPhpdoc(data, this.tab);
     }
 
     private convertParam(arg: Parameter): IParameter {
@@ -359,7 +359,7 @@ export class PropertyBlock extends Block {
             this.varHint = types.join('|');
         } catch (error: any) {
             this.varHint = 'mixed';
-            App.instance.utils.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -375,6 +375,6 @@ export class PropertyBlock extends Block {
 
         data.push(`@var ${this.varHint}`);
 
-        return App.instance.utils.arrayToPhpdoc(data, this.tab);
+        return App.instance.arrayToPhpdoc(data, this.tab);
     }
 }

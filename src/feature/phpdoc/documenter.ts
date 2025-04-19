@@ -1,5 +1,5 @@
 import {Position, Range, TextDocument, TextEditorEdit, window} from 'vscode';
-import App from '../app';
+import App from '../../app';
 import {
     D_REGEX_CLASS,
     D_REGEX_CONSTANT,
@@ -7,7 +7,7 @@ import {
     D_REGEX_PROPERTY,
     M_ERROR,
     M_INFO,
-} from '../constants';
+} from '../../constants';
 import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock} from './block';
 
 export default class Documenter {
@@ -33,7 +33,7 @@ export default class Documenter {
             }
         });
         if (this.blocks.length < 1) {
-            App.instance.utils.showMessage('Phpdoc already exists', M_INFO);
+            App.instance.showMessage('Phpdoc already exists', M_INFO);
         }
     }
 
@@ -47,7 +47,7 @@ export default class Documenter {
                 }
                 data.push({startLine: b.startLine, template});
             } catch (error: any) {
-                App.instance.utils.showMessage(`${error.message} - in block ${b.name}`, M_ERROR);
+                App.instance.showMessage(`${error.message} - in block ${b.name}`, M_ERROR);
             }
         });
         App.instance.editor.edit((edit: TextEditorEdit) => {
@@ -71,7 +71,7 @@ export default class Documenter {
             if (matches !== null) {
                 character = 0;
                 name = matches[2] as string;
-                type = App.instance.utils.capitalizeFirstCharTrimmed(matches[1]);
+                type = App.instance.capitalizeFirstCharTrimmed(matches[1]);
             }
 
             matches = D_REGEX_CONSTANT.exec(lineText) as Array<string>|null;

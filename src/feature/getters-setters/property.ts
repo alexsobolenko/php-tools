@@ -1,7 +1,7 @@
 import {Position} from 'vscode';
 import {Class, Engine, Name, PropertyStatement} from 'php-parser';
-import App from '../app';
-import {D_REGEX_CLASS, M_ERROR, R_SETTER, R_UNDEFINED_PROPERTY} from '../constants';
+import App from '../../app';
+import {D_REGEX_CLASS, M_ERROR, R_SETTER, R_UNDEFINED_PROPERTY} from '../../constants';
 
 export default class Property {
     public name: string;
@@ -35,7 +35,7 @@ export default class Property {
                 }
             }
 
-            const phpParser = new Engine(App.instance.phpParserParams);
+            const phpParser = new Engine(App.instance.composer('php-parser-params'));
             const program = phpParser.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`, '');
 
             const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
@@ -66,7 +66,7 @@ export default class Property {
             this.name = R_UNDEFINED_PROPERTY;
             this.type = null;
             this.hint = null;
-            App.instance.utils.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
         }
     }
 
@@ -74,6 +74,6 @@ export default class Property {
         const isBoolHint = ['bool', 'boolean'].includes(this.hint ?? '');
         const prefix = type === R_SETTER ? 'set' : (isBoolHint ? 'is' : 'get');
 
-        return prefix + App.instance.utils.capitalizeFirstCharTrimmed(this.name);
+        return prefix + App.instance.capitalizeFirstCharTrimmed(this.name);
     }
 }
