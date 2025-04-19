@@ -1,4 +1,4 @@
-import {TextDocument, TextLine} from 'vscode';
+import {Position, TextDocument, TextLine} from 'vscode';
 import {
     Class,
     ClassConstant,
@@ -12,7 +12,7 @@ import {
     PropertyStatement,
     UseItem,
 } from 'php-parser';
-import App from '../app';
+import App from '../../app';
 import {
     A_DOC_LINES_AFTER_DESCR,
     A_DOC_LINES_BEFORE_RETURN,
@@ -27,8 +27,8 @@ import {
     D_TYPE_CONSTANT,
     D_TYPE_PROPERTY,
     M_ERROR,
-} from '../constants';
-import {IParameter} from '../interfaces';
+} from '../../constants';
+import {IParameter} from '../../interfaces';
 
 // * BASE BLOCK CLASS
 export class Block {
@@ -39,10 +39,8 @@ export class Block {
     public activeLine: TextLine;
     public phpParser: Engine;
 
-    public constructor() {
-        const position = App.instance.editor.selection.active;
-
-        this.phpParser = new Engine(App.instance.phpParserParams);
+    public constructor(position: Position) {
+        this.phpParser = new Engine(App.instance.composer('php-parser-params'));
         this.type = 'undefined';
         this.name = '';
         this.activeLine = App.instance.editor.document.lineAt(position.line);
@@ -63,8 +61,8 @@ export class Block {
 export class ClassBlock extends Block {
     public kind: string;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_CLASS;
         this.kind = '';
@@ -82,14 +80,14 @@ export class ClassBlock extends Block {
             this.name = className.name;
             this.kind = klass.kind;
         } catch (error: any) {
-            App.instance.utils.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
     public get template(): string {
-        const name = `${App.instance.utils.capitalizeFirstCharTrimmed(this.kind)} ${this.name}`;
+        const name = `${App.instance.capitalizeFirstCharTrimmed(this.kind)} ${this.name}`;
 
-        return App.instance.utils.arrayToPhpdoc([`${name} description.`], this.tab);
+        return App.instance.arrayToPhpdoc([`${name} description.`], this.tab);
     }
 }
 
@@ -97,8 +95,8 @@ export class ClassBlock extends Block {
 export class ConstantBlock extends Block {
     public constType: string|null;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_CONSTANT;
 
@@ -133,7 +131,7 @@ export class ConstantBlock extends Block {
             this.constType = (matches && matches.length >= 3) ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2]) : 'mixed';
         } catch (error: any) {
             this.constType = 'mixed';
-            App.instance.utils.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -149,7 +147,7 @@ export class ConstantBlock extends Block {
 
         data.push(`@var ${this.constType}`);
 
-        return App.instance.utils.arrayToPhpdoc(data, this.tab);
+        return App.instance.arrayToPhpdoc(data, this.tab);
     }
 }
 
@@ -159,21 +157,20 @@ export class FunctionBlock extends Block {
     public returnHint: string;
     public throws: Array<string>;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_FUNCTION;
         this.params = [];
         this.throws = [];
         this.returnHint = '';
 
-        const startLine = App.instance.editor.selection.active.line;
         const document = App.instance.editor.document as TextDocument;
         const code = document.getText();
 
         let ast = null;
         try {
-            const funcDeclr = document.lineAt(startLine).text.trim();
+            const funcDeclr = document.lineAt(this.startLine).text.trim();
             const matches = funcDeclr.match(D_REGEX_FUNCTION) as Array<any>;
             if (!matches[3]) {
                 throw new Error('Function name not found');
@@ -230,7 +227,7 @@ export class FunctionBlock extends Block {
         } catch (error: any) {
             this.returnHint = '';
             this.params = [];
-            App.instance.utils.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
         }
     }
 
@@ -271,7 +268,7 @@ export class FunctionBlock extends Block {
             data.push(`@throws ${v}`);
         });
 
-        return App.instance.utils.arrayToPhpdoc(data, this.tab);
+        return App.instance.arrayToPhpdoc(data, this.tab);
     }
 
     private convertParam(arg: Parameter): IParameter {
@@ -325,8 +322,8 @@ export class FunctionBlock extends Block {
 export class PropertyBlock extends Block {
     public varHint: string;
 
-    public constructor() {
-        super();
+    public constructor(position: Position) {
+        super(position);
 
         this.type = D_TYPE_PROPERTY;
 
@@ -362,7 +359,7 @@ export class PropertyBlock extends Block {
             this.varHint = types.join('|');
         } catch (error: any) {
             this.varHint = 'mixed';
-            App.instance.utils.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
         }
     }
 
@@ -378,6 +375,6 @@ export class PropertyBlock extends Block {
 
         data.push(`@var ${this.varHint}`);
 
-        return App.instance.utils.arrayToPhpdoc(data, this.tab);
+        return App.instance.arrayToPhpdoc(data, this.tab);
     }
 }

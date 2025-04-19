@@ -2,9 +2,9 @@
 export const CMD_INSERT_GETTER = 'advanced-php-tools.insert-getter';
 export const CMD_INSERT_SETTER = 'advanced-php-tools.insert-setter';
 export const CMD_INSERT_GETTER_SETTER = 'advanced-php-tools.insert-getter-setter';
-export const CMD_INSERT_GETTER_WIZARD = 'advanced-php-tools.insert-getter-wizard';
-export const CMD_INSERT_SETTER_WIZARD = 'advanced-php-tools.insert-setter-wizard';
-export const CMD_INSERT_GETTER_SETTER_WIZARD = 'advanced-php-tools.insert-getter-setter-wizard';
+export const CMD_INSERT_GETTER_MASTER = 'advanced-php-tools.insert-getter-master';
+export const CMD_INSERT_SETTER_MASTER = 'advanced-php-tools.insert-setter-master';
+export const CMD_INSERT_GETTER_SETTER_MASTER = 'advanced-php-tools.insert-getter-setter-master';
 
 export const CMD_GENERATE_CLASS = 'advanced-php-tools.generate-class';
 export const CMD_GENERATE_ABSTRACT_CLASS = 'advanced-php-tools.generate-abstract-class';
@@ -14,6 +14,7 @@ export const CMD_GENERATE_INTERFACE = 'advanced-php-tools.generate-interface';
 export const CMD_GENERATE_TRAIT = 'advanced-php-tools.generate-trait';
 
 export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
+export const CMD_GENERATE_PHPDOC_MASTER = 'advanced-php-tools.generate-php-doc-master';
 
 export const CMD_GENERATE_CONSTRUCTOR = 'advanced-php-tools.generate-constructor';
 

@@ -1,6 +1,6 @@
 import {Position, TextEditorEdit} from 'vscode';
-import App from '../app';
-import {A_FAB_GENERATE_PHPDOC, A_FAB_STRICT_TYPES, F_UNDEFINED_TYPE} from '../constants';
+import App from '../../app';
+import {A_FAB_GENERATE_PHPDOC, A_FAB_STRICT_TYPES, F_UNDEFINED_TYPE} from '../../constants';
 import File from './file';
 
 export default class Builder {
@@ -21,7 +21,7 @@ export default class Builder {
                 edit.replace(new Position(0, 0), template);
             });
         } catch (error: any) {
-            App.instance.utils.showMessage(`Error generating object: '${error.message}'.`, 'error');
+            App.instance.showMessage(`Error generating object: '${error.message}'.`, 'error');
         }
     }
 
@@ -35,8 +35,8 @@ export default class Builder {
         const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
 
         const addPhpdoc = !!App.instance.config(A_FAB_GENERATE_PHPDOC, false);
-        const name = `${App.instance.utils.capitalizeFirstCharTrimmed(keyword)} ${this.file.name}`;
-        const phpdoc = addPhpdoc ? App.instance.utils.arrayToPhpdoc([`${name} ${this.file.name}`]) : '';
+        const name = `${App.instance.capitalizeFirstCharTrimmed(keyword)} ${this.file.name}`;
+        const phpdoc = addPhpdoc ? App.instance.arrayToPhpdoc([`${name} ${this.file.name}`]) : '';
 
         return `<?php\n\n${strictTypes}`
             + `namespace ${this.file.namespace};\n\n`

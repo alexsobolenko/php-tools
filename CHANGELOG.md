@@ -1,6 +1,13 @@
 # Change Log
 
-## [0.3.2] - 2025-04-19
+## [0.3.3] - 2025-04-19
+
+### Changed
+
+- Updated phpdoc generation
+- Refactored
+
+## [0.3.2] - 2025-04-18
 
 ### Changed
 
@@ -40,7 +47,7 @@
 
 ### Added
 
-- Feature #1 updated - use wizard to select properties for create getters and setters
+- Feature #1 updated - use master to select properties for create getters and setters
 
 ## [0.2.5] - 2025-02-17
 

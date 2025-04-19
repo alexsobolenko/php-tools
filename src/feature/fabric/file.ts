@@ -1,4 +1,4 @@
-import App from '../app';
+import App from '../../app';
 import {
     F_ABSTRACT_CLASS,
     F_CLASS,
@@ -7,7 +7,7 @@ import {
     F_INTERFACE,
     F_TRAIT,
     F_UNDEFINED_TYPE,
-} from '../constants';
+} from '../../constants';
 
 export default class File {
     public name: string;
@@ -15,8 +15,8 @@ export default class File {
     public type: string;
 
     public constructor(fileName: string, type: string) {
-        const nameData = App.instance.utils.splitPath(fileName);
-        this.namespace = App.instance.utils.pathToNamespace(nameData[0]);
+        const nameData = App.instance.splitPath(fileName);
+        this.namespace = App.instance.pathToNamespace(nameData[0]);
         this.name = nameData[1].replace('.php', '');
         this.type = type;
     }

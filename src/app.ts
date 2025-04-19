@@ -1,28 +1,19 @@
-import {Location, Position, TextEditor, Uri, WorkspaceConfiguration, window, workspace} from 'vscode';
-import * as yaml from 'yaml';
-import {Utils} from './utils';
-import SymfonyServicesProvider from './provider/symfony_services_provider';
-import SymfonyServicesYamlProvider from './provider/symfony_services_yaml_provider';
-import SymfonyTemplatesProvider from './provider/symfony_templates_provider';
+import {CodeLensProvider, TextEditor, WorkspaceConfiguration, WorkspaceFolder, window, workspace} from 'vscode';
+import fs from 'fs';
+import path from 'path';
+import {M_ERROR, M_INFO, M_WARNING} from './constants';
+import Symfony from './framework/symfony/service';
 
 export default class App {
     private static _instance: App;
-    private _utils: Utils;
     private _config: WorkspaceConfiguration;
-    private _composerData: {[k: string]: any};
-    private _symfonyServicesProvider: SymfonyServicesProvider;
-    private _symfonyServicesYamlProvider: SymfonyServicesYamlProvider;
-    private _symfonyServicesMap: Map<string, Location>;
-    private _symfonyTemplatesProvider: SymfonyTemplatesProvider;
+    private _project: Map<string, any>|null;
+    private _symfony: Symfony;
 
     private constructor() {
-        this._utils = Utils.get();
         this._config = workspace.getConfiguration('advanced-php-tools');
-        this._composerData = this._utils.composerData();
-        this._symfonyServicesProvider = new SymfonyServicesProvider();
-        this._symfonyServicesYamlProvider = new SymfonyServicesYamlProvider();
-        this._symfonyServicesMap = new Map();
-        this._symfonyTemplatesProvider = new SymfonyTemplatesProvider();
+        this._project = null;
+        this._symfony = new Symfony();
     }
 
     public static get instance(): App {
@@ -31,6 +22,16 @@ export default class App {
         }
 
         return this._instance;
+    }
+
+    public get symfony(): Symfony {
+        return this._symfony;
+    }
+
+    public get providers(): Array<{selector: Object, provider: CodeLensProvider}> {
+        return [
+            ...this._symfony.providers,
+        ];
     }
 
     public get editor(): TextEditor {
@@ -46,82 +47,106 @@ export default class App {
         return editor;
     }
 
-    public get utils(): Utils {
-        return this._utils;
-    }
-
     public config(key: string, defaultValue: any = null): any {
         return this._config.get(key, defaultValue);
     }
 
     public composer(key: string, defaultValue: any = null): any {
-        return this._utils.hasKey(this._composerData, key) ? this._composerData[key] : defaultValue;
-    }
+        if (this._project === null) {
+            this._project = new Map();
+            const workspaceFolders = workspace.workspaceFolders as Array<WorkspaceFolder>;
+            if (typeof workspaceFolders !== 'undefined' && workspaceFolders.length > 0) {
+                const wf = workspaceFolders[0].uri.fsPath;
+                this._project.set('workplacePath', wf);
 
-    public get phpParserParams(): object {
-        return {
-            parser: {
-                extractDoc: true,
-                version: App.instance.composer('php-version', '7.4'),
-            },
-            ast: {
-                withPositions: true,
-            },
-        };
-    }
+                const composerFile = path.join(wf, 'composer.json');
+                if (fs.existsSync(composerFile)) {
+                    const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
 
-    public get symfonyServicesProvider(): SymfonyServicesProvider {
-        return this._symfonyServicesProvider;
-    }
+                    const data = JSON.parse(composerFileContent);
+                    this._project.set('autoload', data['autoload']['psr-4']);
 
-    public get symfonyServicesYamlProvider(): SymfonyServicesYamlProvider {
-        return this._symfonyServicesYamlProvider;
-    }
+                    const phpSrc = data['require']['php'] ?? null;
+                    const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
+                    this._project.set('php-version', phpVersion);
 
-    public get symfonyTemplatesProvider(): SymfonyTemplatesProvider {
-        return this._symfonyTemplatesProvider;
-    }
-
-    public async updateSymfonyServices(uri: Uri): Promise<void> {
-        const doc = await workspace.openTextDocument(uri);
-        const text = doc.getText();
-        const parsed = yaml.parse(text);
-
-        this._symfonyServicesMap.clear();
-        if (parsed.services) {
-            for (const [serviceId, config] of Object.entries(parsed.services)) {
-                if (typeof config === 'object' && (config as any).class) {
-                    const fqcn = (config as any).class.trim();
-                    const position = this.findServicePosition(text, serviceId);
-                    if (position) {
-                        this._symfonyServicesMap.set(fqcn, new Location(uri, position));
-                    }
-                } else if (this.looksLikeFqcn(serviceId)) {
-                    const position = this.findServicePosition(text, serviceId);
-                    if (position) {
-                        this._symfonyServicesMap.set(serviceId, new Location(uri, position));
-                    }
+                    this._project.set('php-parser-params', {
+                        parser: {extractDoc: true, version: phpVersion},
+                        ast: {withPositions: true},
+                    });
                 }
             }
         }
+
+        return this._project?.get(key) || defaultValue;
     }
 
-    public getServiceLocation(fqcn: string): Location|undefined {
-        return this._symfonyServicesMap.get(fqcn);
-    }
-
-    private findServicePosition(text: string, serviceId: string): Position|undefined {
-        const lines = text.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes(`${serviceId}:`)) {
-                return new Position(i, 0);
-            }
+    public showMessage(buffer: string, type: string = 'info') {
+        const message = buffer.replace(/\$\(.+?\)\s\s/, '');
+        const data = [M_ERROR, M_INFO, M_WARNING];
+        const fcn = data.includes(type) ? type : M_INFO;
+        if (fcn === M_ERROR) {
+            window.showErrorMessage(message);
+        } else if (fcn === M_WARNING) {
+            window.showWarningMessage(message);
+        } else {
+            window.showInformationMessage(message);
         }
-
-        return undefined;
     }
 
-    private looksLikeFqcn(serviceId: string): boolean {
+    public fillArray(element: any, cnt: number): Array<any> {
+        const res = new Array(cnt);
+        res.fill(element);
+
+        return res;
+    }
+
+    public multiplyString(element: string, cnt: number, separator: string = ''): string {
+        return this.fillArray(element, cnt).join(separator);
+    }
+
+    public hasKey(obj: object, key: string): key is keyof typeof obj {
+        return key in obj;
+    }
+
+    public pathToNamespace(fullPath: string): string {
+        const normalizedPath = fullPath.replace(/\\/g, '/');
+        const normalizedWorkplace = App.instance.composer('workplacePath', '');
+        const autoloadData = App.instance.composer('autoload', {});
+        const relativePath = path.relative(normalizedWorkplace, normalizedPath).replace('.php', '').replace(/\\/g, '/');
+        let result = relativePath;
+        Object.entries(autoloadData).forEach(([namespaceStart, searchPath]) => {
+            const normalizedSearchPath = (searchPath as string).replace(/\\/g, '/');
+            if (relativePath.startsWith(normalizedSearchPath)) {
+                result = namespaceStart + relativePath.slice(normalizedSearchPath.length).replace(/\//g, '\\');
+            }
+        });
+
+        return result;
+    }
+
+    public splitPath(fullPath: string): [string, string] {
+        const i = fullPath.lastIndexOf(path.sep);
+
+        return (i === -1) ? ['', fullPath] : [fullPath.substring(0, i), fullPath.substring(i + 1)];
+    }
+
+    public capitalizeFirstCharTrimmed(input: string): string {
+        const trimmedInput = input.trim();
+        if (!trimmedInput) return trimmedInput;
+
+        return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
+    }
+
+    public arrayToPhpdoc(data: Array<string>, tab: string = ''): string {
+        const res: Array<string> = data.map((v) => `${tab} * ${v}`);
+        res.unshift(`${tab}/**`);
+        res.push(`${tab} */`);
+
+        return `${res.join('\n')}\n`;
+    }
+
+    public looksLikeFqcn(serviceId: string): boolean {
         return /^[A-Za-z0-9_\\]+$/.test(serviceId);
     }
 }

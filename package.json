@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -54,16 +54,16 @@
                 "title": "Advanced PHP Tools. Insert getter and setter"
             },
             {
-                "command": "advanced-php-tools.insert-getter-wizard",
-                "title": "Advanced PHP Tools. Insert getter (Wizard)"
+                "command": "advanced-php-tools.insert-getter-master",
+                "title": "Advanced PHP Tools. Insert getter (Master)"
             },
             {
-                "command": "advanced-php-tools.insert-setter-wizard",
-                "title": "Advanced PHP Tools. Insert setter (Wizard)"
+                "command": "advanced-php-tools.insert-setter-master",
+                "title": "Advanced PHP Tools. Insert setter (Master)"
             },
             {
-                "command": "advanced-php-tools.insert-getter-setter-wizard",
-                "title": "Advanced PHP Tools. Insert getter and setter (Wizard)"
+                "command": "advanced-php-tools.insert-getter-setter-master",
+                "title": "Advanced PHP Tools. Insert getter and setter (Master)"
             },
             {
                 "command": "advanced-php-tools.generate-class",
@@ -92,6 +92,10 @@
             {
                 "command": "advanced-php-tools.generate-php-doc",
                 "title": "Advanced PHP Tools. Generate PHPDoc"
+            },
+            {
+                "command": "advanced-php-tools.generate-php-doc-master",
+                "title": "Advanced PHP Tools. Generate PHPDoc (Master)"
             },
             {
                 "command": "advanced-php-tools.generate-constructor",
