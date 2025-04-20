@@ -1,4 +1,5 @@
 import {CodeLensProvider} from 'vscode';
+import {Yii2ViewProvider} from './providers';
 
 export default class Yii2 {
     public used: boolean;
@@ -20,6 +21,11 @@ export default class Yii2 {
             return [];
         }
 
-        return [];
+        return [
+            {
+                selector: {language: 'php', scheme: 'file'},
+                provider: new Yii2ViewProvider(),
+            },
+        ];
     }
 }

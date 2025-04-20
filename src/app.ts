@@ -86,6 +86,7 @@ export default class App {
     public get providers(): Array<{selector: Object, provider: CodeLensProvider}> {
         return [
             ...this._symfony.providers,
+            ...this._yii2.providers,
         ];
     }
 
