@@ -12,8 +12,38 @@ export default class App {
 
     private constructor() {
         this._config = workspace.getConfiguration('advanced-php-tools');
-        this._project = null;
-        this._symfony = new Symfony();
+
+        let isSymfonyUsed = false;
+        this._project = new Map();
+        const workspaceFolders = workspace.workspaceFolders as Array<WorkspaceFolder>;
+        if (typeof workspaceFolders !== 'undefined' && workspaceFolders.length > 0) {
+            const wf = workspaceFolders[0].uri.fsPath;
+            this._project.set('workplacePath', wf);
+
+            const composerFile = path.join(wf, 'composer.json');
+            if (fs.existsSync(composerFile)) {
+                const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
+                const data = JSON.parse(composerFileContent);
+
+                const phpSrc = data['require']['php'] ?? null;
+                const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
+                this._project.set('php-version', phpVersion);
+
+                const autoloadPsr4 = (data['autoload'] || {})['psr-4'] || [];
+                this._project.set('autoload', {
+                    ...autoloadPsr4,
+                });
+
+                isSymfonyUsed = Symfony.checkComposerData(data);
+
+                this._project.set('php-parser-params', {
+                    parser: {extractDoc: true, version: phpVersion},
+                    ast: {withPositions: true},
+                });
+            }
+        }
+
+        this._symfony = new Symfony(isSymfonyUsed);
     }
 
     public static get instance(): App {
@@ -62,9 +92,10 @@ export default class App {
                 const composerFile = path.join(wf, 'composer.json');
                 if (fs.existsSync(composerFile)) {
                     const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
-
                     const data = JSON.parse(composerFileContent);
-                    this._project.set('autoload', data['autoload']['psr-4']);
+
+                    const autoloadPsr4 = (data['autoload'] || {})['psr-4'] || [];
+                    this._project.set('autoload', autoloadPsr4);
 
                     const phpSrc = data['require']['php'] ?? null;
                     const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
