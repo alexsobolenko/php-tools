@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.4] - 2025-04-20
+
+### Added
+
+- Yii framework support
+
 ## [0.3.3] - 2025-04-19
 
 ### Changed
@@ -17,7 +23,7 @@
 
 ### Added
 
-- Symfony `config/services.yml` support
+- Symfony framework support
 
 ## [0.3.0] - 2025-04-15
 
