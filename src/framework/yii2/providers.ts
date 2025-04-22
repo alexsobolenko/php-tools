@@ -1,4 +1,4 @@
-import {TextDocument, CodeLens, Range, Command, CodeLensProvider, Uri} from 'vscode';
+import {TextDocument, CodeLens, Range, Command, CodeLensProvider, Uri, Position} from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import App from '../../app';
@@ -105,5 +105,69 @@ export class Yii2ViewProvider implements CodeLensProvider {
         };
 
         return new CodeLens(range, command);
+    }
+}
+
+export class Yii2DiProvider implements CodeLensProvider {
+    private diConfigFiles = [
+        'config/di.php',
+        'config/web.php',
+        'common/config/main.php',
+        'config/main.php',
+    ];
+
+    public provideCodeLenses(document: TextDocument): CodeLens[] {
+        if (!App.instance.yii2.used) {
+            return [];
+        }
+
+        const className = this.extractFqcn(document);
+        if (!className) {
+            return [];
+        }
+
+        const configPath = this.findDiConfig(className);
+        if (!configPath)  {
+            return [];
+        }
+
+        const range = new Range(document.positionAt(0), document.positionAt(50));
+
+        return [
+            new CodeLens(range, {
+                title: '⚙️ DI Config',
+                command: 'vscode.open',
+                arguments: [Uri.file(configPath.file), {
+                    selection: new Range(new Position(configPath.line, 0), new Position(configPath.line, 20)),
+                }],
+            }),
+        ];
+    }
+
+    private extractFqcn(document: TextDocument): string|null {
+        const text = document.getText();
+        const nsMatch = text.match(/namespace\s+([\w\\]+)/);
+        const classMatch = text.match(/class\s+(\w+)/);
+
+        return (!nsMatch || !classMatch) ? null : `${nsMatch[1]}\\${classMatch[1]}`;
+    }
+
+    private findDiConfig(className: string): {file: string, line: number}|null {
+        const projectRoot = App.instance.composer('workplacePath');
+        for (const configFile of this.diConfigFiles) {
+            const fullPath = path.join(projectRoot, configFile);
+            if (fs.existsSync(fullPath)) {
+                const content = fs.readFileSync(fullPath, 'utf-8');
+                const lines = content.split('\n');
+                for (let i = 0; i < lines.length; i++) {
+                    const includesSet = lines[i].includes('Yii::$container->set(') || lines[i].includes('->set(');
+                    if (lines[i].includes(className) && includesSet) {
+                        return {file: fullPath, line: i};
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }
