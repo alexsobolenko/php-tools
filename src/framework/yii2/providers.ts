@@ -1,6 +1,6 @@
 import {TextDocument, CodeLens, Range, Command, CodeLensProvider, Uri, Position} from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
+import path from 'path';
+import fs from 'fs';
 import App from '../../app';
 
 export class Yii2ViewProvider implements CodeLensProvider {

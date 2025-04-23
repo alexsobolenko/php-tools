@@ -31,11 +31,6 @@ import {
 } from './constants';
 
 export async function activate(context: ExtensionContext) {
-    console.log('Advanced PHP Tools. Extension activated!');
-    process.on('uncaughtException', (error) => {
-        console.error('Advanced PHP Tools. Uncaught Exception:', error);
-    });
-
     /* getters-setters */
     context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER, () => {
         const position = App.instance.editor.selection.active;
