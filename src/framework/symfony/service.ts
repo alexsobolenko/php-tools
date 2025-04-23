@@ -5,12 +5,30 @@ import App from '../../app';
 
 export default class Symfony {
     public services: Map<string, Location>;
+    public used: boolean;
 
-    public constructor() {
+    public constructor(used: boolean) {
+        this.used = used;
         this.services = new Map();
     }
 
+    public static checkComposerData(data: any): boolean {
+        if (data.require?.['symfony/symfony'] || data.require?.['symfony/framework-bundle']) {
+            return true;
+        }
+
+        if (data.extra?.['symfony-app-dir'] || data.extra?.['symfony-var-dir']) {
+            return true;
+        }
+
+        return false;
+    }
+
     public get providers(): Array<{selector: Object, provider: CodeLensProvider}> {
+        if (!this.used) {
+            return [];
+        }
+
         return [
             {
                 selector: {language: 'php'},
@@ -28,7 +46,7 @@ export default class Symfony {
     }
 
     public async updateServices(uri: Uri|null): Promise<void> {
-        if (uri === null) {
+        if (uri === null || !this.used) {
             return;
         }
 
@@ -55,10 +73,14 @@ export default class Symfony {
     }
 
     public getServiceLocation(fqcn: string): Location|null {
-        return this.services.get(fqcn) || null;
+        return this.used ? (this.services.get(fqcn) || null) : null;
     }
 
     private findServicePosition(text: string, serviceId: string): Position|null {
+        if (!this.used) {
+            return null;
+        }
+
         const lines = text.split('\n');
         for (let i = 0; i < lines.length; i++) {
             if (lines[i].includes(`${serviceId}:`)) {

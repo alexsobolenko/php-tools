@@ -31,6 +31,11 @@ import {
 } from './constants';
 
 export async function activate(context: ExtensionContext) {
+    console.log('Advanced PHP Tools. Extension activated!');
+    process.on('uncaughtException', (error) => {
+        console.error('Advanced PHP Tools. Uncaught Exception:', error);
+    });
+
     /* getters-setters */
     context.subscriptions.push(commands.registerCommand(CMD_INSERT_GETTER, () => {
         const position = App.instance.editor.selection.active;
@@ -108,14 +113,16 @@ export async function activate(context: ExtensionContext) {
         construct.render();
     }));
 
+    /* php frameworks */
+    App.instance.providers.forEach((p) => {
+        context.subscriptions.push(languages.registerCodeLensProvider(p.selector, p.provider));
+    });
+
     /* symfony */
     const watcher = workspace.createFileSystemWatcher('**/config/services.{yml,yaml}');
     watcher.onDidChange((uri) => App.instance.symfony.updateServices(uri));
     watcher.onDidCreate((uri) => App.instance.symfony.updateServices(uri));
     context.subscriptions.push(watcher);
-    App.instance.providers.forEach((p) => {
-        context.subscriptions.push(languages.registerCodeLensProvider(p.selector, p.provider));
-    });
     await App.instance.symfony.updateServices(await symfonyServicesYamlUri());
 }
 

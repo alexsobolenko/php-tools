@@ -6,6 +6,10 @@ import App from '../../app';
 
 export class SymfonyServicesProvider implements CodeLensProvider {
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
+        if (!App.instance.symfony.used) {
+            return [];
+        }
+
         const text: string = document.getText();
         const lenses: Array<CodeLens> = [];
         const classMatches = text.matchAll(/^[ \t]*(?:final\s+|abstract\s+)?class\s+(\w+)/gm);
@@ -42,6 +46,10 @@ export class SymfonyServicesProvider implements CodeLensProvider {
 
 export class SymfonyServicesYamlProvider implements CodeLensProvider {
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
+        if (!App.instance.symfony.used) {
+            return [];
+        }
+
         const text: string = document.getText();
         const parsed = yaml.parse(text);
         const lenses: Array<CodeLens> = [];
@@ -61,10 +69,14 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
 
     private addClassLens(document: TextDocument, serviceId: string, fqcn: string, lenses: Array<CodeLens>) {
         const classPath = this.fqcnToPath(fqcn);
-        if (!classPath) return;
+        if (!classPath) {
+            return;
+        }
 
         const range = this.findServiceRange(document, serviceId);
-        if (!range) return;
+        if (!range) {
+            return;
+        }
 
         lenses.push(new CodeLens(range, {
             title: '📦 Go to Class',
@@ -108,6 +120,10 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
 
 export class SymfonyTemplatesProvider implements CodeLensProvider {
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
+        if (!App.instance.symfony.used) {
+            return [];
+        }
+
         const text = document.getText();
         const lenses: Array<CodeLens> = [];
         const twigPatterns: Array<{pattern: RegExp, index: number}> = [

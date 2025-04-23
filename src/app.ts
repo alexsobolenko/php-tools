@@ -3,17 +3,68 @@ import fs from 'fs';
 import path from 'path';
 import {M_ERROR, M_INFO, M_WARNING} from './constants';
 import Symfony from './framework/symfony/service';
+import Yii2 from './framework/yii2/service';
 
 export default class App {
     private static _instance: App;
     private _config: WorkspaceConfiguration;
     private _project: Map<string, any>|null;
     private _symfony: Symfony;
+    private _yii2: Yii2;
 
     private constructor() {
         this._config = workspace.getConfiguration('advanced-php-tools');
-        this._project = null;
-        this._symfony = new Symfony();
+
+        let isSymfonyUsed = false;
+        let isYii2Used = false;
+        this._project = new Map();
+        const workspaceFolders = workspace.workspaceFolders as Array<WorkspaceFolder>;
+        if (typeof workspaceFolders !== 'undefined' && workspaceFolders.length > 0) {
+            const wf = workspaceFolders[0].uri.fsPath;
+            this._project.set('workplacePath', wf);
+
+            const composerFile = path.join(wf, 'composer.json');
+            if (fs.existsSync(composerFile)) {
+                const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
+                const data = JSON.parse(composerFileContent);
+                isSymfonyUsed = Symfony.checkComposerData(data);
+                isYii2Used = Yii2.checkComposerData(data);
+
+                const phpSrc = data['require']['php'] ?? null;
+                const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
+                this._project.set('php-version', phpVersion);
+
+                this._project.set('php-parser-params', {
+                    parser: {extractDoc: true, version: phpVersion},
+                    ast: {withPositions: true},
+                });
+
+                const autoloadPsr4 = (data['autoload'] || {})['psr-4'] || [];
+                const autoloadPaths = {...autoloadPsr4};
+
+                if (isYii2Used) {
+                    const possiblePaths = [
+                        {ns: 'app\\', dir: ''},
+                        {ns: 'app\\', dir: 'app/'},
+                        {ns: 'backend\\', dir: 'backend/'},
+                        {ns: 'frontend\\', dir: 'frontend/'},
+                        {ns: 'console\\', dir: 'console/'},
+                    ];
+                    for (const {ns, dir} of possiblePaths) {
+                        const controllersPath = path.join(wf, dir, 'controllers');
+                        const modelsPath = path.join(wf, dir, 'models');
+                        if (fs.existsSync(controllersPath) || fs.existsSync(modelsPath)) {
+                            autoloadPaths[ns] = dir;
+                        }
+                    }
+                }
+
+                this._project.set('autoload', autoloadPaths);
+            }
+        }
+
+        this._symfony = new Symfony(isSymfonyUsed);
+        this._yii2 = new Yii2(isYii2Used);
     }
 
     public static get instance(): App {
@@ -28,9 +79,14 @@ export default class App {
         return this._symfony;
     }
 
+    public get yii2(): Yii2 {
+        return this._yii2;
+    }
+
     public get providers(): Array<{selector: Object, provider: CodeLensProvider}> {
         return [
             ...this._symfony.providers,
+            ...this._yii2.providers,
         ];
     }
 
@@ -62,9 +118,10 @@ export default class App {
                 const composerFile = path.join(wf, 'composer.json');
                 if (fs.existsSync(composerFile)) {
                     const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
-
                     const data = JSON.parse(composerFileContent);
-                    this._project.set('autoload', data['autoload']['psr-4']);
+
+                    const autoloadPsr4 = (data['autoload'] || {})['psr-4'] || [];
+                    this._project.set('autoload', autoloadPsr4);
 
                     const phpSrc = data['require']['php'] ?? null;
                     const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
