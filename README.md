@@ -63,7 +63,7 @@ Tools for better PHP development
 
 - Advanced PHP Tools. Generate class constructor
 
-### Feature #5 - Symfony support
+## Feature #5 - Symfony support
 
 - Open class configuration in `config/services.yaml`
 
@@ -76,3 +76,7 @@ Tools for better PHP development
 - Open twig template
 
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-templates.gif)
+
+## Feature #6 - Yii2 support
+
+### In progress 🙃

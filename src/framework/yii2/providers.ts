@@ -110,10 +110,12 @@ export class Yii2ViewProvider implements CodeLensProvider {
 
 export class Yii2DiProvider implements CodeLensProvider {
     private diConfigFiles = [
-        'config/di.php',
         'config/web.php',
-        'common/config/main.php',
+        'config/web-local.php',
         'config/main.php',
+        'config/main-local.php',
+        'common/config/main.php',
+        'common/config/main-local.php',
     ];
 
     public provideCodeLenses(document: TextDocument): CodeLens[] {
