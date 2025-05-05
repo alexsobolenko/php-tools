@@ -49,7 +49,7 @@ export default [{
         'object-curly-spacing': ['error', 'never'],
         'object-shorthand': 'error',
         'one-var': ['error', 'never'],
-        'operator-linebreak': ['error', 'before', {overrides: {'&&': 'after'}}],
+        'operator-linebreak': ['error', 'before'],
         'padded-blocks': ['error', 'never'],
         'prefer-const': 'error',
         'prefer-destructuring': ['error', {object: true, array: true}],

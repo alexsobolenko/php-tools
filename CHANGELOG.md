@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.7] - 2025-05-05
+
+### Added
+
+- Yii framework support updated
+
 ## [0.3.6] - 2025-05-05
 
 ### Changed

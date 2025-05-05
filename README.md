@@ -74,14 +74,23 @@ Specialized tools for Symfony development:
 - Service configuration navigation (jump between service.yaml and class)
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services-yaml.gif)
 
-- Twig template navigation
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-templates.gif)
-
 - Quick access to service definitions
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services.gif)
 
+- Twig template navigation
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-templates.gif)
+
 ### 6. Yii2 Framework Support
-- In progress 🙃
+Specialized tools for Yii2 development:
+
+- Service configuration navigation (jump from configuration to class)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/yii2-config-to-class.gif)
+
+- Quick access to service definitions (jump from class to configuration)
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/yii2-class-to-config.gif)
+
+- View template navigation from controller
+![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/yii2-views.gif)
 
 ## Configuration Options
 
