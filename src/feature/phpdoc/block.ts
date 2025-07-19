@@ -27,6 +27,7 @@ import {
     D_TYPE_CONSTANT,
     D_TYPE_PROPERTY,
     M_ERROR,
+    D_VALID_KLASS,
 } from '../../constants';
 import {IParameter} from '../../interfaces';
 
@@ -115,7 +116,7 @@ export class ConstantBlock extends Block {
             }
             const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
-            const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
+            const klass = program.children.find((node) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
             if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const stmt = klass.body.find((node) => node.kind === 'classconstant') as ClassConstant|undefined;
@@ -172,11 +173,11 @@ export class FunctionBlock extends Block {
         try {
             const funcDeclr = document.lineAt(this.startLine).text.trim();
             const matches = funcDeclr.match(D_REGEX_FUNCTION) as Array<any>;
-            if (!matches[3]) {
+            if (!matches[1]) {
                 throw new Error('Function name not found');
             }
 
-            this.name = matches[3] as string;
+            this.name = matches[1] as string;
 
             ast = this.parseCode(code);
 
@@ -184,7 +185,7 @@ export class FunctionBlock extends Block {
             const uses: Array<string> = [];
             const namespace = ast.children.find((node) => node.kind === 'namespace') as Namespace|undefined;
             if (namespace) {
-                klass = namespace.children.find((node: any) => node.kind === 'class') as Class|undefined;
+                klass = namespace.children.find((node: any) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
                 namespace.children.forEach((ug: any) => {
                     const name = ug.name as string;
                     if ('items' in ug) {
@@ -195,13 +196,13 @@ export class FunctionBlock extends Block {
                     }
                 });
             } else {
-                klass = ast.children.find((node: any) => node.kind === 'class') as Class|undefined;
+                klass = ast.children.find((node: any) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
             }
 
             if (typeof klass === 'undefined') throw new Error('Class declaration not found');
 
             let func: Method|undefined;
-            klass.body.forEach((node) => {
+            klass.body.forEach((node: any) => {
                 if (node.kind === 'method') {
                     const name = node.name as Name;
                     if (name.name === this.name) {
@@ -342,7 +343,7 @@ export class PropertyBlock extends Block {
             }
             const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
-            const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
+            const klass = program.children.find((node) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
             if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const stmt = klass.body.find((node) => node.kind === 'propertystatement') as PropertyStatement|undefined;
