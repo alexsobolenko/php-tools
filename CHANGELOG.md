@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.4.0] - 2025-07-19
+
+### Changed
+
+- Fixed phpdoc generation
+
 ## [0.3.7] - 2025-05-05
 
 ### Added
