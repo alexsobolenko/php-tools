@@ -31,7 +31,9 @@ export default class App {
                 isYii2Used = Yii2.checkComposerData(data);
 
                 const phpSrc = data['require']['php'] ?? null;
-                const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
+                const phpVerCleaned = phpSrc.trim().replace(/^[~^<>=\s]+/, '');
+                const phpVerMatch = phpVerCleaned.match(/^(\d+)\.(\d+)/);
+                const phpVersion = phpVerMatch ? `${phpVerMatch[1]}.${phpVerMatch[2]}` : '7.4';
                 this._project.set('php-version', phpVersion);
 
                 this._project.set('php-parser-params', {
@@ -108,33 +110,6 @@ export default class App {
     }
 
     public composer(key: string, defaultValue: any = null): any {
-        if (this._project === null) {
-            this._project = new Map();
-            const workspaceFolders = workspace.workspaceFolders as Array<WorkspaceFolder>;
-            if (typeof workspaceFolders !== 'undefined' && workspaceFolders.length > 0) {
-                const wf = workspaceFolders[0].uri.fsPath;
-                this._project.set('workplacePath', wf);
-
-                const composerFile = path.join(wf, 'composer.json');
-                if (fs.existsSync(composerFile)) {
-                    const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
-                    const data = JSON.parse(composerFileContent);
-
-                    const autoloadPsr4 = (data['autoload'] || {})['psr-4'] || [];
-                    this._project.set('autoload', autoloadPsr4);
-
-                    const phpSrc = data['require']['php'] ?? null;
-                    const phpVersion = phpSrc === null ? '7.4' : phpSrc.replace(/.+(\d+\.\d+)/, '$1');
-                    this._project.set('php-version', phpVersion);
-
-                    this._project.set('php-parser-params', {
-                        parser: {extractDoc: true, version: phpVersion},
-                        ast: {withPositions: true},
-                    });
-                }
-            }
-        }
-
         return this._project?.get(key) || defaultValue;
     }
 
