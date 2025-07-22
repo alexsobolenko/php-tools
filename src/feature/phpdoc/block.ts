@@ -72,9 +72,8 @@ export class ClassBlock extends Block {
             let declr = this.activeLine.text.trim();
             declr = `${declr} ${declr.includes('{') ? '}' : ' {}'}`;
             const program = this.parseCode(`<?php \n ${declr} \n`);
-            const types = ['class', 'enum', 'interface', 'trait'];
 
-            const klass = program.children.find((node) => types.includes(node.kind)) as Declaration|undefined;
+            const klass = program.children.find((node) => D_VALID_KLASS.includes(node.kind)) as Declaration|undefined;
             if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
 
             const className = klass.name as Name;

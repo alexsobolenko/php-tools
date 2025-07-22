@@ -58,7 +58,7 @@ export const F_UNDEFINED_TYPE = '__undefined__';
 /* phpdoc */
 export const D_TYPE_FUNCTION = 'function';
 // eslint-disable-next-line max-len
-export const D_REGEX_FUNCTION = /^\s*(?:(?:abstract|final|public|protected|private|static)\s+){0,3}function\s+(\w+)\s*(\([^)]*\))?\s*(?::\s*\??\s*[\w\\]+)/u;
+export const D_REGEX_FUNCTION = /^\s*(?:(?:abstract|final|public|protected|private|static)\s+){0,3}function\s+(\w+)\s*(\([^)]*\))?\s*(?::\s*\??\s*[\w\\]+)?/u;
 
 export const D_TYPE_CLASS = 'class';
 export const D_REGEX_CLASS = /(class|interface|trait|enum)\s+(\w+)\s?/u;
