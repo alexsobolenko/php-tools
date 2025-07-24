@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.4.2] - 2025-07-24
+
+### Changed
+
+- Fixed class generation
+
 ## [0.4.1] - 2025-07-22
 
 ### Changed

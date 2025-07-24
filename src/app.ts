@@ -42,7 +42,8 @@ export default class App {
                 });
 
                 const autoloadPsr4 = (data['autoload'] || {})['psr-4'] || [];
-                const autoloadPaths = {...autoloadPsr4};
+                const autoloadPsr4Dev = (data['autoload-dev'] || {})['psr-4'] || [];
+                const autoloadPaths = {...autoloadPsr4, ...autoloadPsr4Dev};
 
                 if (isYii2Used) {
                     const possiblePaths = [

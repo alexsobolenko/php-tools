@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
