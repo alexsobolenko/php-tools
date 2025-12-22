@@ -1,0 +1,72 @@
+{
+    "sfrender": {
+        "prefix": "sfrender",
+        "body": ["return $this->render('${1:template}.html.twig', [${2:}]);"],
+        "description": "Symfony render template"
+    },
+    "sfredirect": {
+        "prefix": "sfredirect",
+        "body": ["return $this->redirectToRoute('${1:route}', [${2:params}]);"],
+        "description": "Symfony redirect to route"
+    },
+    "sfjson": {
+        "prefix": "sfjson",
+        "body": ["return $this->json([${1:data}]);"],
+        "description": "Symfony JSON response"
+    },
+    "sfctrlact": {
+        "prefix": "sfctrlact",
+        "body": [
+            "public function ${1:actionName}(${2:Request $request}): Response {",
+            "\t$0",
+            "\treturn $this->render('${3:template}.html.twig', [${4:}]);",
+            "}"
+        ],
+        "description": "Symfony controller action"
+    },
+    "sfrouteattr": {
+        "prefix": "sfrouteattr",
+        "body": ["#[Route(path: '${1:/path}', name: '${2:route_name}', methods: ['${3:GET}'])]"],
+        "description": "Symfony Route attribute"
+    },
+    "sfrouteanno": {
+        "prefix": "sfrouteanno",
+        "body": ["@Route(path='${1:/path}', name='${2:route_name}', methods={'${3:GET}'})"],
+        "description": "Symfony Route annotation"
+    },
+    "sfcolattr": {
+        "prefix": "sfcolattr",
+        "body": ["#[ORM\\Column(name: '${1:name}', type: '${2:string}', length: ${3:255}, nullable: ${4:false})]"],
+        "description": "Doctrine ORM Column attribute"
+    },
+    "sfcolanno": {
+        "prefix": "sfcolanno",
+        "body": ["@ORM\\Column(name='${1:name}', type='${2:string}', length=${3:255}, nullable=${4:false})"],
+        "description": "Doctrine ORM Column annotation"
+    },
+    "sffind": {
+        "prefix": "sffind",
+        "body": ["$${1:entity} = \\$this->${2:repo}->find(${3:id});"],
+        "description": "Find entity by ID using repository property"
+    },
+    "sfget": {
+        "prefix": "sfget",
+        "body": ["$${1:entity} = \\$this->${2:repo}->get(${3:id});"],
+        "description": "Find entity by ID using repository property"
+    },
+    "sffindall": {
+        "prefix": "sffindall",
+        "body": ["$${1:entities} = \\$this->${2:repo}->findAll();"],
+        "description": "Find all entities using repository property"
+    },
+    "sffindby": {
+        "prefix": "sffindby",
+        "body": ["$${1:entities} = \\$this->${2:repo}->findBy([${3:criteria}], [${4:orderBy}], ${5:limit}, ${6:offset});"],
+        "description": "Find entities by criteria using repository property"
+    },
+    "sffindoneby": {
+        "prefix": "sffindoneby",
+        "body": ["$${1:entity} = \\$this->${2:repo}->findOneBy([${3:criteria}]);"],
+        "description": "Find single entity by criteria using repository property"
+    }
+}

@@ -1,0 +1,109 @@
+{
+    "yaction": {
+        "prefix": "yaction",
+        "body": [
+            "public function action${1:ActionName}() {",
+            "\t$0",
+            "\treturn $this->render('${2:view}', [${3:}]);",
+            "}"
+        ],
+        "description": "Yii2 controller action"
+    },
+    "yjsonaction": {
+        "prefix": "yjsonaction",
+        "body": [
+            "public function action${1:ActionName}() {",
+            "\t$data = ${2:data};",
+            "\treturn \\$this->asJson(\\$data);",
+            "}"
+        ],
+        "description": "Yii2 controller action returning JSON"
+    },
+    "yredirect": {
+        "prefix": "yredirect",
+        "body": ["return $this->redirect(['${1:route}', ${2:params}]);"],
+        "description": "Yii2 redirect"
+    },
+    "ymodfind": {
+        "prefix": "ymodelfind",
+        "body": ["$${1:model} = ${2:Model}::findOne(${3:id});"],
+        "description": "Yii2 find model by primary key"
+    },
+    "yloadpost": {
+        "prefix": "yloadpost",
+        "body": ["if ($model->load(Yii::$app->request->post()) && $model->save()) {", "\t$0", "}"],
+        "description": "Yii2 load POST and save"
+    },
+    "yarquery": {
+        "prefix": "yarquery",
+        "body": ["$data = ${1:Model}::find()->where([${2:condition}])->all();"],
+        "description": "Yii2 ActiveRecord query"
+    },
+    "ymodelrules": {
+        "prefix": "ymodelrules",
+        "body": [
+            "public function rules() {",
+            "\treturn [",
+            "\t\t[${1:attributes}, '${2:rule}', ${3:options}],",
+            "\t];",
+            "}"
+        ],
+        "description": "Yii2 model rules() method"
+    },
+    "ymodelattributelabels": {
+        "prefix": "ymodellabels",
+        "body": [
+            "public function attributeLabels() {",
+            "\treturn [",
+            "\t\t'${1:attribute}' => '${2:Label}',",
+            "\t];",
+            "}"
+        ],
+        "description": "Yii2 model attributeLabels() method"
+    },
+    "yencode": {
+        "prefix": "yencode",
+        "body": ["<?= Html::encode(${1:content}) ?>"],
+        "description": "Html encode content"
+    },
+    "ylink": {
+        "prefix": "ylink",
+        "body": ["<?= Html::a('${1:label}', ['${2:route}'], ${3:options}) ?>"],
+        "description": "Html anchor link"
+    },
+    "yimg": {
+        "prefix": "yimg",
+        "body": ["<?= Html::img('${1:src}', ${2:options}) ?>"],
+        "description": "Html image tag"
+    },
+    "ytag": {
+        "prefix": "ytag",
+        "body": ["<?= Html::tag('${1:tag}', ${2:content}, ${3:options}) ?>"],
+        "description": "Html generic tag"
+    },
+    "ybutton": {
+        "prefix": "ybutton",
+        "body": ["<?= Html::button('${1:label}', ${2:options}) ?>"],
+        "description": "Html button"
+    },
+    "ysubmit": {
+        "prefix": "ysubmit",
+        "body": ["<?= Html::submitButton('${1:label}', ${2:options}) ?>"],
+        "description": "Html submit button"
+    },
+    "ycheckbox": {
+        "prefix": "ycheckbox",
+        "body": ["<?= Html::checkbox('${1:name}', ${2:checked}, ${3:options}) ?>"],
+        "description": "Html checkbox input"
+    },
+    "yradio": {
+        "prefix": "yradio",
+        "body": ["<?= Html::radio('${1:name}', ${2:checked}, ${3:options}) ?>"],
+        "description": "Html radio input"
+    },
+    "ylabel": {
+        "prefix": "ylabel",
+        "body": ["<?= Html::label('${1:label}', '${2:for}', ${3:options}) ?>"],
+        "description": "Html label"
+    }
+}

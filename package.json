@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -19,7 +19,8 @@
     },
     "categories": [
         "Other",
-        "Programming Languages"
+        "Programming Languages",
+        "Snippets"
     ],
     "keywords": [
         "php",
@@ -103,6 +104,24 @@
                 "title": "Advanced PHP Tools. Generate class constructor"
             }
         ],
+        "snippets": [
+            {
+                "language": "php",
+                "path": "./snippets/php.json"
+            },
+            {
+                "language": "php",
+                "path": "./snippets/symfony.json"
+            },
+            {
+                "language": "php",
+                "path": "./snippets/yii2.json"
+            },
+            {
+                "language": "twig",
+                "path": "./snippets/twig.json"
+            }
+        ],
         "keybindings": [
             {
                 "command": "advanced-php-tools.generate-php-doc",
@@ -180,13 +199,21 @@
                 }
             }
         },
-        "languages": [{
-            "id": "php",
-            "extensions": [".php"]
-        }, {
-            "id": "yaml",
-            "extensions": [".yml", ".yaml"]
-        }]
+        "languages": [
+            {
+                "id": "php",
+                "extensions": [
+                    ".php"
+                ]
+            },
+            {
+                "id": "yaml",
+                "extensions": [
+                    ".yml",
+                    ".yaml"
+                ]
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",

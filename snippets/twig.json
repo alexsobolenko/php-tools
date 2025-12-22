@@ -1,0 +1,47 @@
+{
+    "twvar": {
+        "prefix": "twvar",
+        "body": ["{{ ${1:variable} }}"],
+        "description": "Output variable"
+    },
+    "twif": {
+        "prefix": "twif",
+        "body": ["{% if ${1:condition} %}", "\t$0", "{% endif %}"],
+        "description": "If statement"
+    },
+    "twifelse": {
+        "prefix": "twifelse",
+        "body": ["{% if ${1:condition} %}", "\t$0", "{% else %}", "\t", "{% endif %}"],
+        "description": "If/else statement"
+    },
+    "twfor": {
+        "prefix": "twfor",
+        "body": ["{% for ${1:item} in ${2:items} %}", "\t$0", "{% endfor %}"],
+        "description": "For loop"
+    },
+    "twinclude": {
+        "prefix": "twinclude",
+        "body": ["{% include '${1:template}.html.twig' %}"],
+        "description": "Include template"
+    },
+    "twextends": {
+        "prefix": "twextends",
+        "body": ["{% extends '${1:base.html.twig}' %}"],
+        "description": "Extends template"
+    },
+    "twblock": {
+        "prefix": "twblock",
+        "body": ["{% block ${1:block_name} %}", "\t$0", "{% endblock %}"],
+        "description": "Block definition"
+    },
+    "twset": {
+        "prefix": "twset",
+        "body": ["{% set ${1:var} = ${2:value} %}"],
+        "description": "Set variable"
+    },
+    "twmacro": {
+        "prefix": "twmacro",
+        "body": ["{% macro ${1:name}(${2:args}) %}", "\t$0", "{% endmacro %}"],
+        "description": "Macro definition"
+    }
+}
