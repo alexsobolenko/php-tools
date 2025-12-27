@@ -53,7 +53,9 @@ export default class Resolver {
     }
 
     public getterTemplate(property: Property): string {
-        if (property.name === R_UNDEFINED_PROPERTY) return '';
+        if (property.name === R_UNDEFINED_PROPERTY) {
+            return '';
+        }
 
         const fcnName = property.getFunction(R_GETTER);
 
@@ -81,7 +83,9 @@ export default class Resolver {
     }
 
     public setterTemplate(property: Property): string {
-        if (property.name === R_UNDEFINED_PROPERTY) return '';
+        if (property.name === R_UNDEFINED_PROPERTY) {
+            return '';
+        }
 
         const fcnName = property.getFunction(R_SETTER);
 

@@ -74,7 +74,9 @@ export class ClassBlock extends Block {
             const program = this.parseCode(`<?php \n ${declr} \n`);
 
             const klass = program.children.find((node) => D_VALID_KLASS.includes(node.kind)) as Declaration|undefined;
-            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid class declaration');
+            }
 
             const className = klass.name as Name;
             this.name = className.name;
@@ -116,22 +118,29 @@ export class ConstantBlock extends Block {
             const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
             const klass = program.children.find((node) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
-            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid class declaration');
+            }
 
             const stmt = klass.body.find((node) => node.kind === 'classconstant') as ClassConstant|undefined;
-            if (typeof stmt === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof stmt === 'undefined') {
+                throw new Error('Invalid constant statement declaration');
+            }
 
             const konst = stmt.constants.find((node) => node.kind === 'constant') as any;
-            if (typeof konst === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof konst === 'undefined') {
+                throw new Error('Invalid constant');
+            }
 
             this.name = (konst.name as Name).name;
             const matches = declr.match(D_REGEX_CONSTANT) as Array<string>|null;
 
-            // eslint-disable-next-line max-len
-            this.constType = (matches && matches.length >= 3) ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2]) : 'mixed';
+            this.constType = (matches && matches.length >= 3)
+                ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2])
+                : 'mixed';
         } catch (error: any) {
             this.constType = 'mixed';
-            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse constant: ${error}.`, M_ERROR);
         }
     }
 
@@ -198,7 +207,9 @@ export class FunctionBlock extends Block {
                 klass = ast.children.find((node: any) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
             }
 
-            if (typeof klass === 'undefined') throw new Error('Class declaration not found');
+            if (typeof klass === 'undefined') {
+                throw new Error('Incalid class declaration');
+            }
 
             let func: Method|undefined;
             klass.body.forEach((node: any) => {
@@ -209,19 +220,52 @@ export class FunctionBlock extends Block {
                     }
                 }
             });
-            if (typeof func === 'undefined') throw new Error('Method declaration not found');
+            if (typeof func === 'undefined') {
+                throw new Error('Invalid method declaration');
+            }
 
             this.params = func.arguments.map((arg: Parameter) => this.convertParam(arg));
 
-            this.findThrows(func.body);
+            const traverse = (body: any) => {
+                if (!body || !('children' in body)) return;
+
+                body.children.forEach((node: any) => {
+                    const item = node.kind === 'expressionstatement' ? node.expression : node;
+                    switch (item.kind) {
+                        case 'throw':
+                            const name = item.what.name || item.what.what.name;
+                            if (!this.throws.includes(name)) {
+                                this.throws.push(name);
+                            }
+                            break;
+                        default:
+                            if (item.body) {
+                                traverse(item.body);
+                            }
+                            if (item.alternate) {
+                                traverse(item.alternate);
+                            }
+                            if (item.catches) {
+                                item.catches.forEach((ctch: any) => {
+                                    traverse(ctch.body);
+                                });
+                            }
+                    }
+                });
+            };
+
+            traverse(func.body);
 
             if (this.name === '__construct') {
                 this.returnHint = 'void';
             } else {
                 const funcType = func.type as any;
-                // eslint-disable-next-line max-len
-                const types = funcType ? (func.type.kind === 'uniontype' ? funcType.types.map((t: Name) => t.name) : [funcType.name]) : ['mixed'];
-                if (func.nullable && !types.includes('void') && !types.includes('null')) types.push('null');
+                const types = funcType
+                    ? (func.type.kind === 'uniontype' ? funcType.types.map((t: Name) => t.name) : [funcType.name])
+                    : ['mixed'];
+                if (func.nullable && !types.includes('void') && !types.includes('null')) {
+                    types.push('null');
+                }
                 this.returnHint = types.join('|');
             }
         } catch (error: any) {
@@ -246,8 +290,9 @@ export class FunctionBlock extends Block {
         });
 
         const returnVoid = !!App.instance.config(A_DOC_RETURN_VOID, false);
-        // eslint-disable-next-line max-len
-        const emptyLinesBeforeReturn = (!returnVoid && this.returnHint === 'void') ? 0 : App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0);
+        const emptyLinesBeforeReturn = (!returnVoid && this.returnHint === 'void')
+            ? 0
+            : App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0);
         for (let i = 0; i < emptyLinesBeforeReturn; i++) {
             data.push('');
         }
@@ -281,40 +326,14 @@ export class FunctionBlock extends Block {
         }
 
         const types = argType.kind === 'uniontype' ? argType.types.map((t: Name) => t.name) : [argType.name];
-        if (arg.nullable && !types.includes('null')) types.push('null');
+        if (arg.nullable && !types.includes('null')) {
+            types.push('null');
+        }
 
         return {
             name: (arg.name as Name).name,
             hint: types.join('|'),
         };
-    }
-
-    private findThrows(body: any) {
-        if (!body || !('children' in body)) return;
-
-        body.children.forEach((node: any) => {
-            const item = node.kind === 'expressionstatement' ? node.expression : node;
-            switch (item.kind) {
-                case 'throw':
-                    const name = item.what.name || item.what.what.name;
-                    if (!this.throws.includes(name)) {
-                        this.throws.push(name);
-                    }
-                    break;
-                default:
-                    if (item.body) {
-                        this.findThrows(item.body);
-                    }
-                    if (item.alternate) {
-                        this.findThrows(item.alternate);
-                    }
-                    if (item.catches) {
-                        item.catches.forEach((ctch: any) => {
-                            this.findThrows(ctch.body);
-                        });
-                    }
-            }
-        });
     }
 }
 
@@ -343,23 +362,33 @@ export class PropertyBlock extends Block {
             const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
             const klass = program.children.find((node) => D_VALID_KLASS.includes(node.kind)) as Class|undefined;
-            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid class declaration');
+            }
 
             const stmt = klass.body.find((node) => node.kind === 'propertystatement') as PropertyStatement|undefined;
-            if (typeof stmt === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof stmt === 'undefined') {
+                throw new Error('Invalid property statement declaration');
+            }
 
             const prop = stmt.properties.find((node) => node.kind === 'property') as any;
-            if (typeof prop === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof prop === 'undefined') {
+                throw new Error('Invalid property declaration');
+            }
 
             this.name = (prop.name as Name).name;
 
-            const types = prop.type.kind === 'uniontype' ? prop.type.types.map((t: Name) => t.name) : [prop.type.name];
-            if (prop.nullable && !types.includes('null')) types.push('null');
+            const types = prop.type.kind === 'uniontype'
+                ? prop.type.types.map((t: Name) => t.name)
+                : [prop.type.name];
+            if (prop.nullable && !types.includes('null')) {
+                types.push('null');
+            }
 
             this.varHint = types.join('|');
         } catch (error: any) {
             this.varHint = 'mixed';
-            App.instance.showMessage(`Failed to parse class: ${error}.`, M_ERROR);
+            App.instance.showMessage(`Failed to parse property: ${error}.`, M_ERROR);
         }
     }
 

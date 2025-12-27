@@ -160,13 +160,21 @@ export default class App {
 
     public splitPath(fullPath: string): [string, string] {
         const i = fullPath.lastIndexOf(path.sep);
+        if (i === -1) {
+            return ['', fullPath];
+        }
 
-        return (i === -1) ? ['', fullPath] : [fullPath.substring(0, i), fullPath.substring(i + 1)];
+        return [
+            fullPath.substring(0, i),
+            fullPath.substring(i + 1),
+        ];
     }
 
     public capitalizeFirstCharTrimmed(input: string): string {
         const trimmedInput = input.trim();
-        if (!trimmedInput) return trimmedInput;
+        if (!trimmedInput) {
+            return trimmedInput;
+        }
 
         return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
     }

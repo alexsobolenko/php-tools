@@ -1,197 +1,329 @@
 {
-    "strict": {
-        "prefix": "strict",
-        "body": ["<?php", "", "declare(strict_types=1);", "", "$0"],
-        "description": "strict types declaration"
+    "Strict types": {
+        "prefix": ["strict"],
+        "body": [
+            "declare(strict_types=1);",
+            "",
+            "$0"
+        ]
     },
-    "for": {
-        "prefix": "for",
-        "body": ["for ($${1:i} = 0; $${1:i} < ${2:count}; $${1:i}++) {", "\t$0", "}"],
-        "description": "for loop"
+    "For i loop": {
+        "prefix": ["for"],
+        "body": [
+            "for ($${1:i} = 0; $${1:i} < ${2:count}; $${1:i}++) {",
+            "\t$0",
+            "}"
+        ]
     },
-    "fore": {
-        "prefix": "fore",
-        "body": ["foreach ($1 as $${2:value}) {", "\t$0", "}"],
-        "description": "foreach loop"
+    "Foreach loop": {
+        "prefix": ["foreach"],
+        "body": [
+            "foreach ($1 as $${2:value}) {",
+            "\t$0",
+            "}"
+        ]
     },
-    "forek": {
-        "prefix": "forek",
-        "body": ["foreach ($1 as $${2:key} => $${3:value}) {", "\t$0", "}"],
-        "description": "foreach loop with keys"
+    "Foreach loop with keys": {
+        "prefix": ["foreach"],
+        "body": [
+            "foreach ($1 as $${2:key} => $${3:value}) {",
+            "\t$0",
+            "}"
+        ]
     },
-    "ifc": {
-        "prefix": "ifc",
-        "body": ["if (${1:condition}) {", "\t$0", "}"],
-        "description": "if statement"
+    "If statement": {
+        "prefix": ["if", "condition"],
+        "body": [
+            "if (${1:condition}) {",
+            "\t$0",
+            "}"
+        ]
     },
-    "ifelc": {
-        "prefix": "ifelc",
-        "body": ["if (${1:condition}) {", "\t$0", "} else {", "\t$1", "}"],
-        "description": "if / else statement"
+    "If-else statement": {
+        "prefix": ["if", "condition", "else"],
+        "body": [
+            "if (${1:condition}) {",
+            "\t$0",
+            "} else {",
+            "\t",
+            "}"
+        ]
     },
-    "guard": {
-        "prefix": "guard",
-        "body": ["if (!${1:condition}) {", "\treturn;", "}"],
-        "description": "guard clause"
+    "Guard without return value": {
+        "prefix": ["guard"],
+        "body": [
+            "if (!${0:condition}) {",
+            "\treturn;",
+            "}"
+        ]
     },
-    "guardnull": {
-        "prefix": "guardnull",
-        "body": ["if (!${1:condition}) {", "\treturn null;", "}"],
-        "description": "guard clause"
+    "Guard returns null": {
+        "prefix": ["guard", "null"],
+        "body": [
+            "if (!${0:condition}) {",
+            "\treturn null;",
+            "}"
+        ]
     },
-    "guardthrow": {
-        "prefix": "guardthrow",
-        "body": ["if (!${1:condition}) {", "throw new ${1:\\Exception}('${2:Error Processing Request}');", "}"],
-        "description": "guard clause"
+    "Guard returns false": {
+        "prefix": ["guard", "false"],
+        "body": [
+            "if (!${0:condition}) {",
+            "\treturn false;",
+            "}"
+        ]
     },
-    "thr": {
-        "prefix": "thr",
-        "body": ["throw new ${1:\\Exception}('${2:Error Processing Request}');"],
-        "description": "throw new exception"
+    "Guard throws exception": {
+        "prefix": ["guard", "throw", "exception"],
+        "body": [
+            "if (!${1:condition}) {",
+            "\tthrow new ${2:AppException}($0);",
+            "}"
+        ]
     },
-    "tryc": {
-        "prefix": "tryc",
-        "body": ["try {", "\t$0", "} catch (${1:\\Throwable} $${2:e}) {", "\t", "}"],
-        "description": "try / catch"
+    "Throw exception": {
+        "prefix": ["throw", "exception"],
+        "body": [
+            "throw new ${1:\\Exception}($0);"
+        ]
     },
-    "trycf": {
-        "prefix": "trycf",
-        "body": ["try {", "\t$0", "} catch (${1:\\Throwable} $${2:e}) {", "\t", "} finally {", "\t", "}"],
-        "description": "try / catch / finally"
+    "Try-catch statement": {
+        "prefix": ["try", "catch"],
+        "body": [
+            "try {",
+            "\t$0",
+            "} catch (${1:AppException} $${2:e}) {",
+            "\t",
+            "}"
+        ]
     },
-    "tryf": {
-        "prefix": "tryf",
-        "body": ["try {", "\t$0", "} finally {", "\t", "}"],
-        "description": "try / finally"
+    "Try-catch statement (with finally)": {
+        "prefix": ["try", "catch", "finally"],
+        "body": [
+            "try {",
+            "\t$0",
+            "} catch (${1:AppException} $${2:e}) {",
+            "\t",
+            "} finally {",
+            "\t",
+            "}"
+        ]
     },
-    "inc": {
-        "prefix": "inc",
-        "body": ["include '$0';"],
-        "description": "'include' statement"
+    "Try-catch statement (with finally, without catch)": {
+        "prefix": ["try", "catch", "finally"],
+        "body": [
+            "try {",
+            "\t$0",
+            "} finally {",
+            "\t",
+            "}"
+        ]
     },
-    "inco": {
-        "prefix": "inco",
-        "body": ["include_once '$0';"],
-        "description": "'include_once' statement"
+    "Include file": {
+        "prefix": ["include", "file"],
+        "body": [
+            "include '$0';"
+        ]
     },
-    "rqr": {
-        "prefix": "rqr",
-        "body": ["require '$0';"],
-        "description": "'require' statement"
+    "Include file once": {
+        "prefix": ["include", "file", "once"],
+        "body": [
+            "include_once '$0';"
+        ]
     },
-    "rqro": {
-        "prefix": "rqro",
-        "body": ["require_once '$0';"],
-        "description": "'require_once' statement"
+    "Require file": {
+        "prefix": ["require", "file"],
+        "body": [
+            "require '$0';"
+        ]
     },
-    "prip": {
-        "prefix": "prip",
-        "body": ["private ${1:Type} $${2:property};"],
-        "description": "private typed property"
+    "Require file once": {
+        "prefix": ["require", "file", "once"],
+        "body": [
+            "require_once '$0';"
+        ]
     },
-    "prop": {
-        "prefix": "prop",
-        "body": ["protected ${1:Type} $${2:property};"],
-        "description": "protected typed property"
+    "Private property": {
+        "prefix": ["prip", "private", "property"],
+        "body": [
+            "private ${1:Type} $${0:property};"
+        ]
     },
-    "pubp": {
-        "prefix": "pubp",
-        "body": ["public ${1:Type} $${2:property};"],
-        "description": "public typed property"
+    "Protected property": {
+        "prefix": ["prop", "protected", "property"],
+        "body": [
+            "protected ${1:Type} $${0:property};"
+        ]
     },
-    "prif": {
-        "prefix": "prif",
-        "body": ["private function $1($2): ${3:void}", "{", "\t$0", "}"],
-        "description": "private function"
+    "Public property": {
+        "prefix": ["pubp", "public", "property"],
+        "body": [
+            "public ${1:Type} $${0:property};"
+        ]
     },
-    "prisf": {
-        "prefix": "prisf",
-        "body": ["private static function $1($2): ${3:void}", "{", "\t$0", "}"],
-        "description": "private static function"
+    "Private function": {
+        "prefix": ["prif", "private", "function", "method"],
+        "body": [
+            "private function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "prof": {
-        "prefix": "prof",
-        "body": ["protected function $1($2): ${3:void}", "{", "\t$0", "}"],
-        "description": "protected function"
+    "Private static function": {
+        "prefix": ["prisf", "private", "static", "function", "method"],
+        "body": [
+            "private static function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "prosf": {
-        "prefix": "prosf",
-        "body": ["protected static function $1($2): ${3:void}", "{", "\t$0", "}"],
-        "description": "protected static function"
+    "Protected function": {
+        "prefix": ["prof", "protected", "function", "method"],
+        "body": [
+            "protected function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "finprof": {
-        "prefix": "finprof",
-        "body": ["final protected function ${1:name}(${2}): ${3:void}", "{", "\t$0", "}"],
-        "description": "final protected function with return type"
+    "Protected static function": {
+        "prefix": ["prosf", "protected", "static", "function", "method"],
+        "body": [
+            "protected static function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "absprof": {
-        "prefix": "absprof",
-        "body": ["abstract protected function ${1:name}(${2}): ${3:void};"],
-        "description": "abstract protected function with return type"
+    "Final protected function": {
+        "prefix": ["finprof", "final", "protected", "function", "method"],
+        "body": [
+            "final protected function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "finprosf": {
-        "prefix": "finprosf",
-        "body": ["final protected static function ${1:name}(${2}): ${3:void}", "{", "\t$0", "}"],
-        "description": "final public static function"
+    "Abstract protected function": {
+        "prefix": ["absprof", "abstract", "protected", "function", "method"],
+        "body": [
+            "abstract protected function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "pubf": {
-        "prefix": "pubf",
-        "body": ["public function $1($2): ${3:void}", "{", "\t$0", "}"],
-        "description": "public function"
+    "Final static protected function": {
+        "prefix": ["finprosf", "final", "protected", "static", "function", "method"],
+        "body": [
+            "final protected static function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "pubsf": {
-        "prefix": "pubsf",
-        "body": ["public static function $1($2): ${3:void}", "{", "\t$0", "}"],
-        "description": "public static function"
+    "Public function": {
+        "prefix": ["pubf", "public", "function", "method"],
+        "body": [
+            "public function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "finpubf": {
-        "prefix": "finpubf",
-        "body": ["final public function ${1:name}(${2}): ${3:void}", "{", "\t$0", "}"],
-        "description": "final public function with return type"
+    "Public static function": {
+        "prefix": ["pubsf", "public", "static", "function", "method"],
+        "body": [
+            "public static function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "abspubf": {
-        "prefix": "abspubf",
-        "body": ["abstract public function ${1:name}(${2}): ${3:void};"],
-        "description": "abstract public function with return type"
+    "Final public function": {
+        "prefix": ["finpubf", "final", "public", "function", "method"],
+        "body": [
+            "final public function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "finpubsf": {
-        "prefix": "finpubsf",
-        "body": ["final public static function ${1:name}(${2}): ${3:void}", "{", "\t$0", "}"],
-        "description": "final public static function"
+    "Abstract public function": {
+        "prefix": ["abspubf", "abstract", "public", "function", "method"],
+        "body": [
+            "abstract public function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "abspubsf": {
-        "prefix": "abspubsf",
-        "body": ["abstract public static function ${1:name}(${2}): ${3:void};"],
-        "description": "abstract public static function"
+    "Final public static function": {
+        "prefix": ["finpubsf", "final", "public", "static", "function", "method"],
+        "body": [
+            "final public static function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "construct": {
-        "prefix": "construct",
-        "body": ["public function __construct(${1})", "{", "\t$0", "}"],
-        "description": "__construct"
+    "Abstract public static function": {
+        "prefix": ["abspubsf", "abstract", "public", "static", "function", "method"],
+        "body": [
+            "abstract public static function $1($2): ${3:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "invoke": {
-        "prefix": "invoke",
-        "body": ["public function __invoke(${1}): ${2:void}", "{", "\t$0", "}"],
-        "description": "__invoke"
+    "Class constructor": {
+        "prefix": ["constructor", "magic"],
+        "body": [
+            "public function __construct($1)",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "tostring": {
-        "prefix": "tostring",
-        "body": ["public function __toString(): string", "{", "\treturn '';", "}"],
-        "description": "__toString"
+    "Class invoke": {
+        "prefix": ["invoke", "magic"],
+        "body": [
+            "public function __invoke($1): ${2:void}",
+            "{",
+            "\t$0",
+            "}"
+        ]
     },
-    "match": {
-        "prefix": "match",
-        "body": ["match (${1:value}) {", "\t${2:case} => ${3:result},", "\tdefault => ${4:result},", "};"],
-        "description": "match expression"
+    "Class to string convert": {
+        "prefix": ["tostring", "magic"],
+        "body": [
+            "public function __toString(): string",
+            "{",
+            "\treturn $0;",
+            "}"
+        ]
     },
-    "switch": {
-        "prefix": "switch",
-        "body": ["switch (${1:value}) {", "\tcase ${2:case}:", "\t\t$0", "\t\tbreak;", "\tdefault:", "\t\tbreak;", "}"],
-        "description": "switch statement"
+    "Match statement": {
+        "prefix": ["match"],
+        "body": [
+            "match (${1:value}) {",
+            "\t${2:case} => ${3:result},",
+            "\tdefault => ${0:result},",
+            "};"
+        ]
     },
-    "nullsafe": {
-        "prefix": "nullsafe",
-        "body": ["$1?->$2"],
-        "description": "nullsafe property/method access"
+    "Switch-case statement": {
+        "prefix": ["switch"],
+        "body": [
+            "switch (${1:value}) {",
+            "\tcase ${2:case}:",
+            "\t\t$0",
+            "\t\tbreak;",
+            "\tdefault:",
+            "\t\t",
+            "}"
+        ]
     }
 }

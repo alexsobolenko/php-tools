@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -221,7 +221,7 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
-        "test": "vscode-test"
+        "publish": "vsce publish"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.10",

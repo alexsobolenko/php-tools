@@ -1,109 +1,114 @@
 {
-    "yaction": {
-        "prefix": "yaction",
+    "Yii2 controller render view": {
+        "prefix": ["yrender", "yii2", "render"],
         "body": [
-            "public function action${1:ActionName}() {",
+            "return \\$this->render('${1:view}', [${2:}]);"
+        ]
+    },
+    "Yii2 controller redirect": {
+        "prefix": ["sfredirect", "symfony", "redirect"],
+        "body": [
+            "return \\$this->redirect(['${1:route}', ${2:params}]);"
+        ]
+    },
+    "Yii2 controller return json": {
+        "prefix": ["yjson", "yii2", "json"],
+        "body": [
+            "return \\$this->asJson($0);"
+        ]
+    },
+    "Yii2 model find": {
+        "prefix": ["ymodelfind", "yii2", "find"],
+        "body": [
+            "\\$${1:model} = ${2:Model}::findOne(${3:id});"
+        ]
+    },
+    "Yii2 controller load post request data": {
+        "prefix": ["yloadpost", "yii2", "loadpost"],
+        "body": [
+            "if (\\$model->load(\\Yii::\\$app->request->post()) && \\$model->save()) {",
             "\t$0",
-            "\treturn $this->render('${2:view}', [${3:}]);",
             "}"
-        ],
-        "description": "Yii2 controller action"
+        ]
     },
-    "yjsonaction": {
-        "prefix": "yjsonaction",
+    "Yii2 models find by params": {
+        "prefix": ["yarquery", "yii2", "find"],
         "body": [
-            "public function action${1:ActionName}() {",
-            "\t$data = ${2:data};",
-            "\treturn \\$this->asJson(\\$data);",
-            "}"
-        ],
-        "description": "Yii2 controller action returning JSON"
+            "\\$data = ${1:Model}::find()->where([${2:condition}])->all();"
+        ]
     },
-    "yredirect": {
-        "prefix": "yredirect",
-        "body": ["return $this->redirect(['${1:route}', ${2:params}]);"],
-        "description": "Yii2 redirect"
-    },
-    "ymodfind": {
-        "prefix": "ymodelfind",
-        "body": ["$${1:model} = ${2:Model}::findOne(${3:id});"],
-        "description": "Yii2 find model by primary key"
-    },
-    "yloadpost": {
-        "prefix": "yloadpost",
-        "body": ["if ($model->load(Yii::$app->request->post()) && $model->save()) {", "\t$0", "}"],
-        "description": "Yii2 load POST and save"
-    },
-    "yarquery": {
-        "prefix": "yarquery",
-        "body": ["$data = ${1:Model}::find()->where([${2:condition}])->all();"],
-        "description": "Yii2 ActiveRecord query"
-    },
-    "ymodelrules": {
-        "prefix": "ymodelrules",
+    "Yii2 model rules declaration": {
+        "prefix": ["ymodelrules", "yii2", "rules"],
         "body": [
             "public function rules() {",
             "\treturn [",
-            "\t\t[${1:attributes}, '${2:rule}', ${3:options}],",
+            "\t\t[[${1:attributes}], '${2:rule}', ${3:options}],",
             "\t];",
             "}"
-        ],
-        "description": "Yii2 model rules() method"
+        ]
     },
-    "ymodelattributelabels": {
-        "prefix": "ymodellabels",
+    "Yii2 model attribute labels": {
+        "prefix": ["ymodellabels", "yii2", "attributes", "labels"],
         "body": [
             "public function attributeLabels() {",
             "\treturn [",
             "\t\t'${1:attribute}' => '${2:Label}',",
             "\t];",
             "}"
-        ],
-        "description": "Yii2 model attributeLabels() method"
+        ]
     },
-    "yencode": {
-        "prefix": "yencode",
-        "body": ["<?= Html::encode(${1:content}) ?>"],
-        "description": "Html encode content"
+    "Yii2 html helper encode": {
+        "prefix": ["yencode", "yii2"],
+        "body": [
+            "<?= Html::encode(${1:content}) ?>"
+        ]
     },
-    "ylink": {
-        "prefix": "ylink",
-        "body": ["<?= Html::a('${1:label}', ['${2:route}'], ${3:options}) ?>"],
-        "description": "Html anchor link"
+    "Yii2 html helper link": {
+        "prefix": ["ylink", "yii2"],
+        "body": [
+            "<?= Html::a('${1:label}', ['${2:route}'], ${3:options}) ?>"
+        ]
     },
-    "yimg": {
-        "prefix": "yimg",
-        "body": ["<?= Html::img('${1:src}', ${2:options}) ?>"],
-        "description": "Html image tag"
+    "Yii2 html helper img": {
+        "prefix": ["yimg", "yii2"],
+        "body": [
+            "<?= Html::img('${1:src}', ${2:options}) ?>"
+        ]
     },
-    "ytag": {
-        "prefix": "ytag",
-        "body": ["<?= Html::tag('${1:tag}', ${2:content}, ${3:options}) ?>"],
-        "description": "Html generic tag"
+    "Yii2 html helper tag": {
+        "prefix": ["ytag", "yii2"],
+        "body": [
+            "<?= Html::tag('${1:tag}', ${2:content}, ${3:options}) ?>"
+        ]
     },
-    "ybutton": {
-        "prefix": "ybutton",
-        "body": ["<?= Html::button('${1:label}', ${2:options}) ?>"],
-        "description": "Html button"
+    "Yii2 html helper button": {
+        "prefix": ["ybutton", "yii2"],
+        "body": [
+            "<?= Html::button('${1:label}', ${2:options}) ?>"
+        ]
     },
-    "ysubmit": {
-        "prefix": "ysubmit",
-        "body": ["<?= Html::submitButton('${1:label}', ${2:options}) ?>"],
-        "description": "Html submit button"
+    "Yii2 html helper submit button": {
+        "prefix": ["ysubmit", "yii2"],
+        "body": [
+            "<?= Html::submitButton('${1:label}', ${2:options}) ?>"
+        ]
     },
-    "ycheckbox": {
-        "prefix": "ycheckbox",
-        "body": ["<?= Html::checkbox('${1:name}', ${2:checked}, ${3:options}) ?>"],
-        "description": "Html checkbox input"
+    "Yii2 html helper checkbox": {
+        "prefix": ["ycheckbox", "yii2"],
+        "body": [
+            "<?= Html::checkbox('${1:name}', ${2:checked}, ${3:options}) ?>"
+        ]
     },
-    "yradio": {
-        "prefix": "yradio",
-        "body": ["<?= Html::radio('${1:name}', ${2:checked}, ${3:options}) ?>"],
-        "description": "Html radio input"
+    "Yii2 html helper radio button": {
+        "prefix": ["yradio", "yii2"],
+        "body": [
+            "<?= Html::radio('${1:name}', ${2:checked}, ${3:options}) ?>"
+        ]
     },
-    "ylabel": {
-        "prefix": "ylabel",
-        "body": ["<?= Html::label('${1:label}', '${2:for}', ${3:options}) ?>"],
-        "description": "Html label"
+    "Yii2 html helper label": {
+        "prefix": ["ylabel", "yii2"],
+        "body": [
+            "<?= Html::label('${1:label}', '${2:for}', ${3:options}) ?>"
+        ]
     }
 }

@@ -39,17 +39,26 @@ export default class Property {
             const program = phpParser.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`, '');
 
             const klass = program.children.find((node) => node.kind === 'class') as Class|undefined;
-            if (typeof klass === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid PHP code');
+            }
 
             const stmt = klass.body.find((node) => node.kind === 'propertystatement') as PropertyStatement|undefined;
-            if (typeof stmt === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof stmt === 'undefined') {
+                throw new Error('Invalid PHP code');
+            }
 
             const prop = stmt.properties.find((node) => node.kind === 'property') as any;
-            if (typeof prop === 'undefined') throw new Error('Invalid PHP code');
+            if (typeof prop === 'undefined') {
+                throw new Error('Invalid PHP code');
+            }
 
-            // eslint-disable-next-line max-len
-            const varTypes: Array<string> = prop.type.kind === 'uniontype' ? prop.type.types.map((t: Name) => t.name) : [prop.type.name];
-            if (prop.nullable && !varTypes.includes('null')) varTypes.push('null');
+            const varTypes: Array<string> = prop.type.kind === 'uniontype'
+                ? prop.type.types.map((t: Name) => t.name)
+                : [prop.type.name];
+            if (prop.nullable && !varTypes.includes('null')) {
+                varTypes.push('null');
+            }
 
             const joinedVarTypes = varTypes.join('|');
             this.hint = joinedVarTypes;

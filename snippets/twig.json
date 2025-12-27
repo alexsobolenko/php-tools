@@ -1,47 +1,138 @@
 {
-    "twvar": {
-        "prefix": "twvar",
-        "body": ["{{ ${1:variable} }}"],
-        "description": "Output variable"
+    "Twig if statement": {
+        "prefix": ["twif", "twig", "if", "condition"],
+        "body": [
+            "{% if ${1:condition} %}",
+            "\t$0",
+            "{% endif %}"
+        ]
     },
-    "twif": {
-        "prefix": "twif",
-        "body": ["{% if ${1:condition} %}", "\t$0", "{% endif %}"],
-        "description": "If statement"
+    "Twig if-else statement": {
+        "prefix": ["twifelse", "twig", "if", "condition", "else"],
+        "body": [
+            "{% if ${1:condition} %}",
+            "\t$0",
+            "{% else %}",
+            "\t",
+            "{% endif %}"
+        ]
     },
-    "twifelse": {
-        "prefix": "twifelse",
-        "body": ["{% if ${1:condition} %}", "\t$0", "{% else %}", "\t", "{% endif %}"],
-        "description": "If/else statement"
+    "Twig end if statement": {
+        "prefix": ["twendif", "twig", "if", "condition"],
+        "body": [
+            "{% endif %}"
+        ]
     },
-    "twfor": {
-        "prefix": "twfor",
-        "body": ["{% for ${1:item} in ${2:items} %}", "\t$0", "{% endfor %}"],
-        "description": "For loop"
+    "Twig foreach loop": {
+        "prefix": ["twfor", "twig", "foreach"],
+        "body": [
+            "{% for ${1:value} in ${2:data} %}",
+            "\t$0",
+            "{% endfor %}"
+        ]
     },
-    "twinclude": {
-        "prefix": "twinclude",
-        "body": ["{% include '${1:template}.html.twig' %}"],
-        "description": "Include template"
+    "Twig foreach loop (with keys)": {
+        "prefix": ["twfork", "twig", "foreach"],
+        "body": [
+            "{% for ${1:key}, ${2:value} in ${3:data} %}",
+            "\t$0",
+            "{% endfor %}"
+        ]
     },
-    "twextends": {
-        "prefix": "twextends",
-        "body": ["{% extends '${1:base.html.twig}' %}"],
-        "description": "Extends template"
+    "Twig end foreach statement": {
+        "prefix": ["twendfor", "twig", "foreach"],
+        "body": [
+            "{% endfor %}"
+        ]
     },
-    "twblock": {
-        "prefix": "twblock",
-        "body": ["{% block ${1:block_name} %}", "\t$0", "{% endblock %}"],
-        "description": "Block definition"
+    "Twig include directive": {
+        "prefix": ["twinclude", "twig", "include"],
+        "body": [
+            "{% include '${1:template}.html.twig' %}"
+        ]
     },
-    "twset": {
-        "prefix": "twset",
-        "body": ["{% set ${1:var} = ${2:value} %}"],
-        "description": "Set variable"
+    "Twig extends directive": {
+        "prefix": ["twextends", "twig", "extends"],
+        "body": [
+            "{% extends '${1:base}.html.twig' %}"
+        ]
     },
-    "twmacro": {
-        "prefix": "twmacro",
-        "body": ["{% macro ${1:name}(${2:args}) %}", "\t$0", "{% endmacro %}"],
-        "description": "Macro definition"
+    "Twig block declaration": {
+        "prefix": ["twblock", "twig", "block"],
+        "body": [
+            "{% block ${1:block_name} %}",
+            "\t$0",
+            "{% endblock %}"
+        ]
+    },
+    "Twig block declaration (one line)": {
+        "prefix": ["twblockf", "twig", "block"],
+        "body": [
+            "{{ block('$0') }}"
+        ]
+    },
+    "Twig end block declaration": {
+        "prefix": ["twendblock", "twig", "block"],
+        "body": [
+            "{% endblock %}"
+        ]
+    },
+    "Twig translate filter": {
+        "prefix": ["twt", "translate", "twig"],
+        "body": [
+            "{{ $0|t }}"
+        ]
+    },
+    "Twig date format filter": {
+        "prefix": ["twdate", "dateformat", "twig"],
+        "body": [
+            "{{ ${1:date}|date(${2:format}) }}"
+        ]
+    },
+    "Twig variable declaration": {
+        "prefix": ["twset", "twig", "set", "variable"],
+        "body": [
+            "{% set ${1:var} = ${2:value} %}"
+        ]
+    },
+    "Twig macro declaration": {
+        "prefix": ["twmacro", "twig", "macro"],
+        "body": [
+            "{% macro ${1:name}(${2:args}) %}",
+            "\t$0",
+            "{% endmacro %}"
+        ]
+    },
+    "Twig spaceless directive": {
+        "prefix": ["twspaceless", "twig", "spaceless"],
+        "body": [
+            "{% spaceless %}",
+            "\t$0",
+            "{% endspaceless %}"
+        ]
+    },
+    "Twig encore script tag": {
+        "prefix": ["twencsrc", "twig", "encore"],
+        "body": [
+            "{{ encore_entry_script_tags('$0') }}"
+        ]
+    },
+    "Twig encore link tag": {
+        "prefix": ["twenclink", "twig", "encore"],
+        "body": [
+            "{{ encore_entry_link_tags('$0') }}"
+        ]
+    },
+    "Twig vite script tag": {
+        "prefix": ["twvitesrc", "twig", "vite"],
+        "body": [
+            "{{ vite_entry_script_tags('$0') }}"
+        ]
+    },
+    "Twig vite link tag": {
+        "prefix": ["twvitelink", "twig", "vite"],
+        "body": [
+            "{{ vite_entry_link_tags('$0') }}"
+        ]
     }
 }
