@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.4.5] - 2026-01-14
+
+### Changed
+
+- Fixed errors
+
+## [0.4.4] - 2025-12-27
+
+### Changed
+
+- Refactored
+
 ## [0.4.3] - 2025-12-22
 
 ### Added

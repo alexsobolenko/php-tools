@@ -30,10 +30,16 @@ export default class App {
                 isSymfonyUsed = Symfony.checkComposerData(data);
                 isYii2Used = Yii2.checkComposerData(data);
 
-                const phpSrc = data['require']['php'] ?? null;
-                const phpVerCleaned = phpSrc.trim().replace(/^[~^<>=\s]+/, '');
-                const phpVerMatch = phpVerCleaned.match(/^(\d+)\.(\d+)/);
-                const phpVersion = phpVerMatch ? `${phpVerMatch[1]}.${phpVerMatch[2]}` : '7.4';
+                const defaultPhpVersion = '8.2';
+                let phpVersion;
+                try {
+                    const phpSrc = data['require']['php'] ?? '';
+                    const phpVerCleaned = phpSrc.trim().replace(/^[~^<>=\s]+/, '');
+                    const phpVerMatch = phpVerCleaned.match(/^(\d+)\.(\d+)/);
+                    phpVersion = phpVerMatch ? `${phpVerMatch[1]}.${phpVerMatch[2]}` : defaultPhpVersion;
+                } catch (e) {
+                    phpVersion = defaultPhpVersion;
+                }
                 this._project.set('php-version', phpVersion);
 
                 this._project.set('php-parser-params', {
