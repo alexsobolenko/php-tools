@@ -69,6 +69,6 @@ export const D_REGEX_CONSTANT = /(\s+)?(?:(?:public|protected|private)\s+)?const
 
 export const D_TYPE_PROPERTY = 'property';
 // eslint-disable-next-line max-len
-export const D_REGEX_PROPERTY = /(\s+)?(?:public|protected|private)\s+(?:static\s+)?((?:\??[\w\\|]+)\s+)?(\$\w+)(?:\s*=\s*([^;]+))?;/u;
+export const D_REGEX_PROPERTY = /(\s+)?(?:(?:public|protected|private)\s+)(?:(?:static|readonly)\s+)?((?:\??[\w\\|]+)\s+)?(\$\w+)(?:\s*=\s*([^;]+))?;?/u;
 
 export const D_VALID_KLASS = ['class', 'interface', 'trait', 'enum'];

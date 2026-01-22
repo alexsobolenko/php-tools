@@ -161,6 +161,42 @@
             "public ${1:Type} $${0:property};"
         ]
     },
+    "Private constant": {
+        "prefix": ["pric", "private", "constant"],
+        "body": [
+            "private const $1 = $0;"
+        ]
+    },
+    "Protected constant": {
+        "prefix": ["proc", "protected", "constant"],
+        "body": [
+            "protected const $1 = $0;"
+        ]
+    },
+    "Public constant": {
+        "prefix": ["pubc", "public", "constant"],
+        "body": [
+            "public const $1 = $0;"
+        ]
+    },
+    "Private typed constant": {
+        "prefix": ["prict", "private", "constant"],
+        "body": [
+            "private const ${1:Type} $2 = $0;"
+        ]
+    },
+    "Protected typed constant": {
+        "prefix": ["proct", "protected", "constant"],
+        "body": [
+            "protected const ${1:Type} $2 = $0;"
+        ]
+    },
+    "Public typed constant": {
+        "prefix": ["pubct", "public", "constant"],
+        "body": [
+            "public const ${1:Type} $2 = $0;"
+        ]
+    },
     "Private function": {
         "prefix": ["prif", "private", "function", "method"],
         "body": [

@@ -62,43 +62,43 @@ export default class Documenter {
         const positions: Array<{name: string, position: Position}> = [];
         for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
             const lineText = document.lineAt(lineNumber).text;
-            let character = null;
+            let charNumber = null;
             let name = null;
             let matches = null;
             let type = null;
 
             matches = D_REGEX_CLASS.exec(lineText) as Array<string>|null;
             if (matches !== null) {
-                character = 0;
+                charNumber = 0;
                 name = matches[2] as string;
                 type = App.instance.capitalizeFirstCharTrimmed(matches[1]);
             }
 
             matches = D_REGEX_CONSTANT.exec(lineText) as Array<string>|null;
             if (matches !== null) {
-                character = 5;
+                charNumber = 5;
                 name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
                 type = 'Constant';
             }
 
             matches = D_REGEX_PROPERTY.exec(lineText) as Array<string>|null;
             if (matches !== null) {
-                character = 5;
+                charNumber = 5;
                 name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
                 type = 'Property';
             }
 
             matches = D_REGEX_FUNCTION.exec(lineText) as Array<string>|null;
             if (matches !== null) {
-                character = 5;
-                name = matches[3] as string;
+                charNumber = 5;
+                name = matches[1] as string;
                 type = matches.includes('static') ? 'Static function' : 'Function';
             }
 
-            if (character !== null && name !== null && type !== null) {
+            if (charNumber !== null && name !== null && type !== null) {
                 positions.push({
                     name: `${positions.length + 1}. ${name} (${type})`,
-                    position: new Position(lineNumber, character),
+                    position: new Position(lineNumber, charNumber),
                 });
             }
         }

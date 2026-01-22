@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.4.6] - 2026-01-22
+
+### Changed
+
+- Fixed errors
+
+### Added
+
+- Snippets
+
 ## [0.4.5] - 2026-01-14
 
 ### Changed

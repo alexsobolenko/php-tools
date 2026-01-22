@@ -28,7 +28,7 @@ export default class Resolver {
             const lineText = document.lineAt(lineNumber).text;
             const matches = D_REGEX_PROPERTY.exec(lineText) as Array<string>|null;
             if (matches !== null) {
-                const position = new Position(lineNumber, 5);
+                const position = new Position(lineNumber, 4);
                 const property = new Property(position);
                 positions.push({
                     name: property.name,
