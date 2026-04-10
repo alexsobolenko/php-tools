@@ -8,7 +8,9 @@ import {
     M_ERROR,
     M_INFO,
 } from '../../constants';
-import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock} from './block';
+import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from './block';
+
+const D_REGEX_VARIABLE = /^\s*(\$\w+)\s*=/u;
 
 export default class Documenter {
     public blocks: Array<Block>;
@@ -27,6 +29,8 @@ export default class Documenter {
                     this.blocks.push(new ConstantBlock(p));
                 } else if (text.match(D_REGEX_FUNCTION)) {
                     this.blocks.push(new FunctionBlock(p));
+                } else if (text.match(D_REGEX_VARIABLE)) {
+                    this.blocks.push(new VariableBlock(p));
                 } else {
                     this.blocks.push(new Block(p));
                 }
@@ -93,6 +97,13 @@ export default class Documenter {
                 charNumber = 5;
                 name = matches[1] as string;
                 type = matches.includes('static') ? 'Static function' : 'Function';
+            }
+
+            matches = D_REGEX_VARIABLE.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                charNumber = document.lineAt(lineNumber).firstNonWhitespaceCharacterIndex;
+                name = matches[1] as string;
+                type = 'Variable';
             }
 
             if (charNumber !== null && name !== null && type !== null) {

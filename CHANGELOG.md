@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.3] - 2026-04-10
+
+### Changed
+
+- Added one-line PHPDoc generation for local variables
+
 ## [0.5.2] - 2026-04-10
 
 ### Changed
