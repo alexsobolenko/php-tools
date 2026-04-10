@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import App from '../../app';
-import {nodeName, nodeRange, parsePhp, walkPhp} from '../../utils/php-ast';
+import {nodeName, nodeRange, tryParsePhp, walkPhp} from '../../utils/php-ast';
 
 export class SymfonyServicesProvider implements CodeLensProvider {
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
@@ -12,12 +12,8 @@ export class SymfonyServicesProvider implements CodeLensProvider {
         }
 
         const text: string = document.getText();
-        let program;
-        try {
-            program = parsePhp(text);
-        } catch (error) {
-            App.instance.showMessage(`Failed to parse PHP file: ${error}`, 'warning');
-
+        const program = tryParsePhp(text);
+        if (program === null) {
             return [];
         }
 

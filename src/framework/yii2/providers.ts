@@ -2,7 +2,15 @@ import {TextDocument, CodeLens, Range, Command, CodeLensProvider, Uri, Position}
 import path from 'path';
 import fs from 'fs';
 import App from '../../app';
-import {collectUseStatements, nodeName, nodeRange, parsePhp, resolveClassReference, walkPhp} from '../../utils/php-ast';
+import {
+    collectUseStatements,
+    nodeName,
+    nodeRange,
+    parsePhp,
+    resolveClassReference,
+    tryParsePhp,
+    walkPhp,
+} from '../../utils/php-ast';
 
 function resolveYiiContainerSetClass(node: any, uses: Map<string, string>): string | null {
     if (node.kind !== 'call' || node.what?.kind !== 'propertylookup') {
@@ -46,12 +54,8 @@ export class Yii2ViewProvider implements CodeLensProvider {
         }
 
         const text: string = document.getText();
-        let program;
-        try {
-            program = parsePhp(text);
-        } catch (error) {
-            App.instance.showMessage(`Failed to parse PHP file: ${error}`, 'warning');
-
+        const program = tryParsePhp(text);
+        if (program === null) {
             return [];
         }
 
@@ -208,12 +212,8 @@ export class Yii2DiProvider implements CodeLensProvider {
             return [];
         }
 
-        let program;
-        try {
-            program = parsePhp(document.getText());
-        } catch (error) {
-            App.instance.showMessage(`Failed to parse PHP file: ${error}`, 'warning');
-
+        const program = tryParsePhp(document.getText());
+        if (program === null) {
             return [];
         }
 

@@ -19,6 +19,7 @@ export interface IPhpNode {
 }
 
 let parser: Engine | null = null;
+let fallbackParser: Engine | null = null;
 
 function phpParser(): Engine {
     if (parser === null) {
@@ -30,6 +31,29 @@ function phpParser(): Engine {
 
 export function parsePhp(buffer: string): Program {
     return phpParser().parseCode(buffer, '');
+}
+
+function phpFallbackParser(): Engine {
+    if (fallbackParser === null) {
+        fallbackParser = new Engine({
+            parser: {extractDoc: true, suppressErrors: true, version: '8.4'},
+            ast: {withPositions: true},
+        });
+    }
+
+    return fallbackParser;
+}
+
+export function tryParsePhp(buffer: string): Program | null {
+    try {
+        return parsePhp(buffer);
+    } catch (error) {
+        try {
+            return phpFallbackParser().parseCode(buffer, '');
+        } catch (fallbackError) {
+            return null;
+        }
+    }
 }
 
 export function walkPhp(

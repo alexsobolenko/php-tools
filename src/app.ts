@@ -50,7 +50,7 @@ export default class App {
                 this._project.set('php-version', phpVersion);
 
                 this._project.set('php-parser-params', {
-                    parser: {extractDoc: true, version: phpVersion},
+                    parser: {extractDoc: true, suppressErrors: true, version: phpVersion},
                     ast: {withPositions: true},
                 });
 
