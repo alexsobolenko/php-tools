@@ -6,12 +6,12 @@ import {
     A_DOC_SHOW_DESCR,
     A_GS_GENERATE_PHPDOC,
     A_GS_RETURN_SELF,
-    D_REGEX_PROPERTY,
     M_ERROR,
     R_GETTER,
     R_SETTER,
     R_UNDEFINED_PROPERTY,
 } from '../../constants';
+import {nodeName, parsePhp, walkPhp} from '../../utils/php-ast';
 import Property from './property';
 
 export default class Resolver {
@@ -23,19 +23,7 @@ export default class Resolver {
 
     public static async selectProperties(placeHolder: string): Promise<Array<Position>> {
         const {document} = App.instance.editor;
-        const positions: Array<{name: string, position: Position}> = [];
-        for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
-            const lineText = document.lineAt(lineNumber).text;
-            const matches = D_REGEX_PROPERTY.exec(lineText) as Array<string>|null;
-            if (matches !== null) {
-                const position = new Position(lineNumber, 4);
-                const property = new Property(position);
-                positions.push({
-                    name: property.name,
-                    position,
-                });
-            }
-        }
+        const positions = this.collectProperties();
 
         const selectedProps = await window.showQuickPick(positions.map((p) => p.name), {
             canPickMany: true,
@@ -50,6 +38,69 @@ export default class Resolver {
         });
 
         return result;
+    }
+
+    private static collectProperties(): Array<{name: string, position: Position}> {
+        const {document} = App.instance.editor;
+        const positions: Array<{name: string, position: Position}> = [];
+        const seen = new Set<string>();
+
+        try {
+            const program = parsePhp(document.getText());
+            walkPhp(program, (node, parent) => {
+                if (node.kind === 'property') {
+                    const name = nodeName(node.name);
+                    const offset = node.loc?.start?.offset;
+                    if (!name || typeof offset !== 'number') {
+                        return;
+                    }
+
+                    const key = `property:${name}:${offset}`;
+                    if (seen.has(key)) {
+                        return;
+                    }
+
+                    seen.add(key);
+                    positions.push({
+                        name,
+                        position: document.positionAt(offset),
+                    });
+
+                    return;
+                }
+
+                if (
+                    node.kind === 'parameter'
+                    && parent?.kind === 'method'
+                    && nodeName(parent.name) === '__construct'
+                    && typeof node.flags === 'number'
+                    && node.flags > 0
+                ) {
+                    const name = nodeName(node.name);
+                    const offset = node.loc?.start?.offset;
+                    if (!name || typeof offset !== 'number') {
+                        return;
+                    }
+
+                    const key = `promoted:${name}:${offset}`;
+                    if (seen.has(key)) {
+                        return;
+                    }
+
+                    seen.add(key);
+                    positions.push({
+                        name,
+                        position: document.positionAt(offset),
+                    });
+                }
+            });
+
+            return positions;
+        } catch (error: any) {
+            App.instance.showMessage(`Failed to parse properties: ${error}.`, M_ERROR);
+
+            return positions;
+        }
     }
 
     public getterTemplate(property: Property): string {

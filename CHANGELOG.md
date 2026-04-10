@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.2] - 2026-04-10
+
+### Changed
+
+- Updated getter and setter generation
+
 ## [0.5.1] - 2026-04-10
 
 ### Changed
