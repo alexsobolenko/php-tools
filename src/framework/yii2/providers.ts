@@ -2,31 +2,90 @@ import {TextDocument, CodeLens, Range, Command, CodeLensProvider, Uri, Position}
 import path from 'path';
 import fs from 'fs';
 import App from '../../app';
+import {collectUseStatements, nodeName, nodeRange, parsePhp, resolveClassReference, walkPhp} from '../../utils/php-ast';
+
+function resolveYiiContainerSetClass(node: any, uses: Map<string, string>): string | null {
+    if (node.kind !== 'call' || node.what?.kind !== 'propertylookup') {
+        return null;
+    }
+
+    const methodName = nodeName(node.what.offset);
+    const owner = node.what.what;
+    if (methodName !== 'set' || owner?.kind !== 'staticlookup') {
+        return null;
+    }
+
+    if (nodeName(owner.what) !== 'Yii' || nodeName(owner.offset) !== 'container') {
+        return null;
+    }
+
+    return resolveClassReference(node.arguments?.[0], uses);
+}
+
+function resolveYiiConfigClassReference(node: any, uses: Map<string, string>): string | null {
+    if (node.kind === 'entry') {
+        if (node.value?.kind === 'array') {
+            return resolveClassReference(node.key, uses);
+        }
+
+        if (nodeName(node.key) === 'class') {
+            return resolveClassReference(node.value, uses);
+        }
+    }
+
+    return resolveYiiContainerSetClass(node, uses);
+}
 
 export class Yii2ViewProvider implements CodeLensProvider {
+    private aliasCache: {[k: string]: string} | null = null;
+    private aliasCacheMtime: number | null = null;
+
     public async provideCodeLenses(document: TextDocument): Promise<Array<CodeLens>> {
         if (!App.instance.yii2.used) {
             return [];
         }
 
         const text: string = document.getText();
+        let program;
+        try {
+            program = parsePhp(text);
+        } catch (error) {
+            App.instance.showMessage(`Failed to parse PHP file: ${error}`, 'warning');
+
+            return [];
+        }
+
         const lenses: Array<CodeLens> = [];
         const controllerPath: string = document.uri.fsPath;
-        const renderPatterns: Array<RegExp> = [
-            /->render\(['"]([^'"]+)['"][^)]*\)/g,
-            /->renderPartial\(['"]([^'"]+)['"][^)]*\)/g,
-            /->renderAjax\(['"]([^'"]+)['"][^)]*\)/g,
-        ];
-        for (const pattern of renderPatterns) {
-            let match: RegExpExecArray|null;
-            while ((match = pattern.exec(text)) !== null) {
-                const viewName = match[1] as string;
-                const viewPath = await this.resolveViewPath(controllerPath, viewName);
-                if (viewPath) {
-                    const startPos = document.positionAt(match.index);
-                    const endPos = document.positionAt(match.index + match[0].length);
-                    lenses.push(this.createViewLens(new Range(startPos, endPos), viewPath));
-                }
+
+        const calls: Array<{name: string, range: Range}> = [];
+        walkPhp(program, (node) => {
+            if (node.kind !== 'call' || node.what?.kind !== 'propertylookup') {
+                return;
+            }
+
+            const method = nodeName(node.what.offset);
+            const owner = node.what.what;
+            const firstArg = node.arguments?.[0];
+            const viewName = nodeName(firstArg);
+            if (
+                !['render', 'renderPartial', 'renderAjax'].includes(method ?? '')
+                || nodeName(owner) !== 'this'
+                || !viewName
+            ) {
+                return;
+            }
+
+            const range = nodeRange(document, node);
+            if (range) {
+                calls.push({name: viewName, range});
+            }
+        });
+
+        for (const call of calls) {
+            const viewPath = await this.resolveViewPath(controllerPath, call.name);
+            if (viewPath) {
+                lenses.push(this.createViewLens(call.range, viewPath));
             }
         }
 
@@ -63,27 +122,7 @@ export class Yii2ViewProvider implements CodeLensProvider {
         if (viewName.startsWith('@')) {
             const [alias, ...rest] = viewName.split('/');
             const viewFile = `${rest.join('/')}.php`;
-            const aliasPattern = /Yii::setAlias\(['"](@[\w-]+)['"]\s*,\s*['"]([^'"]+)['"]\)/g;
-            const aliases: {[k: string]: string} = {
-                '@app': 'app',
-                '@frontend': 'frontend',
-                '@backend': 'backend',
-                '@console': 'console',
-                '@common': 'common',
-            };
-
-            [
-                [App.instance.composer('wf'), 'config', 'web.php'],
-            ].forEach((f) => {
-                const configPath = path.join(...f);
-                if (fs.existsSync(configPath)) {
-                    let match;
-                    const configContent = fs.readFileSync(configPath, 'utf-8');
-                    while ((match = aliasPattern.exec(configContent)) !== null) {
-                        aliases[match[1] as string] = match[2] as string;
-                    }
-                }
-            });
+            const aliases = this.loadAliases(projectRoot);
 
             if (App.instance.hasKey(aliases, alias)) {
                 paths.push(path.join(projectRoot, aliases[alias], 'views', viewFile));
@@ -91,6 +130,61 @@ export class Yii2ViewProvider implements CodeLensProvider {
         }
 
         return paths;
+    }
+
+    private loadAliases(projectRoot: string): {[k: string]: string} {
+        const configPath = path.join(projectRoot, 'config', 'web.php');
+        const defaults: {[k: string]: string} = {
+            '@app': 'app',
+            '@frontend': 'frontend',
+            '@backend': 'backend',
+            '@console': 'console',
+            '@common': 'common',
+        };
+
+        if (!fs.existsSync(configPath)) {
+            return defaults;
+        }
+
+        const mtime = fs.statSync(configPath).mtimeMs;
+        if (this.aliasCache !== null && this.aliasCacheMtime === mtime) {
+            return this.aliasCache;
+        }
+
+        const aliases = {...defaults};
+        const configContent = fs.readFileSync(configPath, 'utf-8');
+        let program;
+        try {
+            program = parsePhp(configContent);
+        } catch (error) {
+            App.instance.showMessage(`Failed to parse Yii2 config: ${error}`, 'warning');
+
+            return defaults;
+        }
+
+        walkPhp(program, (node) => {
+            if (node.kind !== 'call' || node.what?.kind !== 'staticlookup') {
+                return;
+            }
+
+            const className = nodeName(node.what.what);
+            const methodName = nodeName(node.what.offset);
+            if (className !== 'Yii' || methodName !== 'setAlias') {
+                return;
+            }
+
+            const [aliasName, aliasPath] = node.arguments ?? [];
+            const resolvedAlias = nodeName(aliasName);
+            const resolvedPath = nodeName(aliasPath);
+            if (resolvedAlias && resolvedPath) {
+                aliases[resolvedAlias] = resolvedPath;
+            }
+        });
+
+        this.aliasCache = aliases;
+        this.aliasCacheMtime = mtime;
+
+        return aliases;
     }
 
     private getControllerId(controllerPath: string): string {
@@ -110,21 +204,30 @@ export class Yii2ViewProvider implements CodeLensProvider {
 
 export class Yii2DiProvider implements CodeLensProvider {
     public provideCodeLenses(document: TextDocument): CodeLens[] {
-        if (!App.instance.yii2.used || !this.isClassFile(document)) {
+        if (!App.instance.yii2.used) {
             return [];
         }
 
-        const className = this.extractFqcn(document);
+        let program;
+        try {
+            program = parsePhp(document.getText());
+        } catch (error) {
+            App.instance.showMessage(`Failed to parse PHP file: ${error}`, 'warning');
+
+            return [];
+        }
+
+        const className = this.extractFqcn(program);
         if (!className) {
             return [];
         }
 
-        const classRange = this.findClassDeclaration(document);
+        const classRange = this.findClassDeclaration(document, program);
         if (!classRange) {
             return [];
         }
 
-        return this.findDiConfigs(className, document).map((config) => {
+        return this.findDiConfigs(className).map((config) => {
             const position = new Position(config.line, 0);
 
             return new CodeLens(classRange, {
@@ -137,36 +240,40 @@ export class Yii2DiProvider implements CodeLensProvider {
         });
     }
 
-    private isClassFile(document: TextDocument): boolean {
-        return document.fileName.endsWith('.php') && document.getText().includes('class ');
+    private findClassDeclaration(document: TextDocument, program: any): Range|null {
+        let result: Range|null = null;
+
+        walkPhp(program, (node) => {
+            if (result !== null || node.kind !== 'class') {
+                return;
+            }
+
+            result = nodeRange(document, node);
+        });
+
+        return result;
     }
 
-    private findClassDeclaration(document: TextDocument): Range|null {
-        const text = document.getText();
-        const classRegex = /class\s+(\w+)/;
-        const match = classRegex.exec(text);
-        if (match) {
-            const startPos = document.positionAt(match.index);
-            const endPos = document.positionAt(match.index + match[0].length);
+    private extractFqcn(program: any): string|null {
+        let namespace: string|null = null;
+        let className: string|null = null;
 
-            return new Range(startPos, endPos);
-        }
+        walkPhp(program, (node) => {
+            if (namespace === null && node.kind === 'namespace') {
+                namespace = nodeName(node.name);
+            }
 
-        return null;
+            if (className === null && node.kind === 'class') {
+                className = nodeName(node.name);
+            }
+        });
+
+        return (!namespace || !className) ? null : `${namespace}\\${className}`;
     }
 
-    private extractFqcn(document: TextDocument): string|null {
-        const text = document.getText();
-        const nsMatch = text.match(/namespace\s+([\w\\]+)/);
-        const classMatch = text.match(/class\s+(\w+)/);
-
-        return (!nsMatch || !classMatch) ? null : `${nsMatch[1]}\\${classMatch[1]}`;
-    }
-
-    private findDiConfigs(className: string, document: TextDocument): Array<{file: string, line: number}> {
+    private findDiConfigs(className: string): Array<{file: string, line: number}> {
         const projectRoot = App.instance.composer('workplacePath');
-        const shortName = className.split('\\').pop() || '';
-        const results = [];
+        const results: Array<{file: string, line: number}> = [];
         for (const configFile of App.instance.yii2.diConfigFiles) {
             const file = path.join(projectRoot, configFile);
             if (!fs.existsSync(file)) {
@@ -174,85 +281,30 @@ export class Yii2DiProvider implements CodeLensProvider {
             }
 
             const content = fs.readFileSync(file, 'utf-8');
-            const lines = content.split('\n');
-            for (let line = 0; line < lines.length; line++) {
-                const lineString = lines[line];
-                if (
-                    this.isDirectDefinition(lineString, className)
-                    || this.isClassConstDefinition(lineString, shortName, content)
-                    || this.isComponentClassDefinition(lineString, className)
-                    || this.isComponentClassConstDefinition(lineString, shortName, content)
-                    || this.isContainerSetDefinition(lineString, className)
-                    || this.isContainerSetClassConstDefinition(lineString, shortName, content)
-                ) {
-                    results.push({file, line});
-                }
+            let program;
+            try {
+                program = parsePhp(content);
+            } catch (error) {
+                App.instance.showMessage(`Failed to parse Yii2 config: ${error}`, 'warning');
+
+                continue;
             }
+
+            const uses = collectUseStatements(program);
+
+            walkPhp(program, (node) => {
+                const resolved = resolveYiiConfigClassReference(node, uses);
+                if (!resolved || resolved !== className) {
+                    return;
+                }
+
+                const line = Math.max((node.loc?.start?.offset ?? 0), 0);
+                const lineNumber = content.slice(0, line).split('\n').length - 1;
+                results.push({file, line: lineNumber});
+            });
         }
 
         return results;
-    }
-
-    private isDirectDefinition(line: string, className: string): boolean {
-        const regex = new RegExp(`['"]${this.escapeForRegex(className)}['"]\\s*=>\\s*\\[`);
-
-        return regex.test(line);
-    }
-
-    private isClassConstDefinition(line: string, shortName: string, content: string): boolean {
-        const useStatement = this.findUseStatement(shortName, content);
-        if (!useStatement) {
-            return false;
-        }
-
-        const regex = new RegExp(`${shortName}::class\\s*=>\\s*\\[`);
-
-        return regex.test(line);
-    }
-
-    private isComponentClassDefinition(line: string, className: string): boolean {
-        const regex = new RegExp(`'class'\\s*=>\\s*['"]${this.escapeForRegex(className)}['"]`);
-
-        return regex.test(line);
-    }
-
-    private isComponentClassConstDefinition(line: string, shortName: string, content: string): boolean {
-        const useStatement = this.findUseStatement(shortName, content);
-        if (!useStatement) {
-            return false;
-        }
-
-        const regex = new RegExp(`'class'\\s*=>\\s*${shortName}::class`);
-
-        return regex.test(line);
-    }
-
-    private isContainerSetDefinition(line: string, className: string): boolean {
-        const regex = new RegExp(`Yii::\\$container->set\\(['"]${this.escapeForRegex(className)}['"]`);
-
-        return regex.test(line);
-    }
-
-    private isContainerSetClassConstDefinition(line: string, shortName: string, content: string): boolean {
-        const useStatement = this.findUseStatement(shortName, content);
-        if (!useStatement) {
-            return false;
-        }
-
-        const regex = new RegExp(`Yii::\\$container->set\\(${shortName}::class`);
-
-        return regex.test(line);
-    }
-
-    private findUseStatement(shortName: string, content: string): string | null {
-        const useRegex = new RegExp(`use\\s+([\\w\\\\]+${shortName})(?:\\s+as\\s+\\w+)?\\s*;`);
-        const match = content.match(useRegex);
-
-        return match ? match[1] : null;
-    }
-
-    private escapeForRegex(str: string): string {
-        return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     }
 }
 
@@ -275,55 +327,37 @@ export class Yii2ConfigToClassProvider implements CodeLensProvider {
 
     private findClassReferences(text: string, document: TextDocument): CodeLens[] {
         const lenses: CodeLens[] = [];
-        const patterns = [
-            /['"]([a-zA-Z][a-zA-Z0-9_\\]+)['"]\s*=>\s*\[/g,
-            /([a-zA-Z][a-zA-Z0-9_]+)::class\s*=>\s*\[/g,
-            /'class'\s*=>\s*['"]([a-zA-Z][a-zA-Z0-9_\\]+)['"]/g,
-            /'class'\s*=>\s*([a-zA-Z][a-zA-Z0-9_]+)::class/g,
-            /Yii::\$container->set\(['"]([a-zA-Z][a-zA-Z0-9_\\]+)['"]/g,
-            /Yii::\$container->set\(([a-zA-Z][a-zA-Z0-9_]+)::class/g,
-        ];
+        let program;
+        try {
+            program = parsePhp(text);
+        } catch (error) {
+            App.instance.showMessage(`Failed to parse Yii2 config: ${error}`, 'warning');
 
-        for (const pattern of patterns) {
-            let match;
-            while ((match = pattern.exec(text)) !== null) {
-                const className = this.resolveClassName(match[1], document);
-                if (!className || !this.isProjectClass(className)) continue;
-
-                const classPath = this.findClassFile(className);
-                if (!classPath) continue;
-
-                const line = text.substring(0, match.index).split('\n').length - 1;
-                const range = new Range(
-                    new Position(line, match.index),
-                    new Position(line, match.index + match[0].length),
-                );
-
-                lenses.push(new CodeLens(range, {
-                    title: '📦 Go to Class',
-                    command: 'vscode.open',
-                    arguments: [Uri.file(classPath)],
-                }));
-            }
+            return [];
         }
+
+        const uses = collectUseStatements(program);
+
+        walkPhp(program, (node) => {
+            const className = resolveYiiConfigClassReference(node, uses);
+            if (!className || !this.isProjectClass(className)) {
+                return;
+            }
+
+            const classPath = this.findClassFile(className);
+            const range = nodeRange(document, node);
+            if (!classPath || !range) {
+                return;
+            }
+
+            lenses.push(new CodeLens(range, {
+                title: '📦 Go to Class',
+                command: 'vscode.open',
+                arguments: [Uri.file(classPath)],
+            }));
+        });
 
         return lenses;
-    }
-
-    private resolveClassName(className: string, document: TextDocument): string|null {
-        if (!className.includes('\\')) {
-            return this.resolveUseStatement(className, document);
-        }
-
-        return className.replace(/^\\/, '');
-    }
-
-    private resolveUseStatement(shortName: string, document: TextDocument): string|null {
-        const text = document.getText();
-        const useRegex = new RegExp(`use\\s+([\\w\\\\]+\\\\)?${shortName}(\\s+as\\s+\\w+)?\\s*;`);
-        const match = text.match(useRegex);
-
-        return match ? match[1] + shortName : null;
     }
 
     private isProjectClass(className: string): boolean {

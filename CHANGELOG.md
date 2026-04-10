@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.1] - 2026-04-10
+
+### Changed
+
+- Updated framework integrations
+
 ## [0.5.0] - 2026-04-10
 
 ### Changed

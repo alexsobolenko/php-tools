@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import App from '../../app';
+import {nodeName, nodeRange, parsePhp, walkPhp} from '../../utils/php-ast';
 
 export class SymfonyServicesProvider implements CodeLensProvider {
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
@@ -11,36 +12,59 @@ export class SymfonyServicesProvider implements CodeLensProvider {
         }
 
         const text: string = document.getText();
-        const lenses: Array<CodeLens> = [];
-        const classMatches = text.matchAll(/^[ \t]*(?:final\s+|abstract\s+)?class\s+(\w+)/gm);
+        let program;
+        try {
+            program = parsePhp(text);
+        } catch (error) {
+            App.instance.showMessage(`Failed to parse PHP file: ${error}`, 'warning');
 
-        for (const match of classMatches) {
-            const className = match[1] as string;
-            const line = document.lineAt(document.positionAt(match.index!).line);
-            const range = new Range(line.range.start, line.range.end);
-
-            const namespace = this.extractNamespace(text, line.lineNumber);
-            const fqcn = namespace ? `${namespace}\\${className}` : className;
-
-            const serviceLocation = App.instance.symfony.getServiceLocation(fqcn);
-            if (serviceLocation) {
-                lenses.push(new CodeLens(range, {
-                    title: '⚙️ Open in services.yaml',
-                    command: 'vscode.open',
-                    arguments: [serviceLocation.uri, {
-                        selection: new Range(serviceLocation.range.start, serviceLocation.range.start),
-                    }],
-                }));
-            }
+            return [];
         }
+
+        const lenses: Array<CodeLens> = [];
+        const namespace = this.extractNamespace(program);
+
+        walkPhp(program, (node) => {
+            if (node.kind !== 'class') {
+                return;
+            }
+
+            const className = nodeName(node.name);
+            const range = nodeRange(document, node);
+            if (!className || !range) {
+                return;
+            }
+
+            const fqcn = namespace ? `${namespace}\\${className}` : className;
+            const serviceLocation = App.instance.symfony.getServiceLocation(fqcn);
+            if (!serviceLocation) {
+                return;
+            }
+
+            lenses.push(new CodeLens(range, {
+                title: '⚙️ Open in services.yaml',
+                command: 'vscode.open',
+                arguments: [serviceLocation.uri, {
+                    selection: new Range(serviceLocation.range.start, serviceLocation.range.start),
+                }],
+            }));
+        });
 
         return lenses;
     }
 
-    private extractNamespace(text: string, classLine: number): string|null {
-        const namespaceMatch = text.match(/namespace\s+([\w\\]+)\s*;/);
+    private extractNamespace(program: any): string|null {
+        let namespace: string|null = null;
 
-        return namespaceMatch?.[1] ?? null;
+        walkPhp(program, (node) => {
+            if (namespace !== null || node.kind !== 'namespace') {
+                return;
+            }
+
+            namespace = nodeName(node.name);
+        });
+
+        return namespace;
     }
 }
 
@@ -51,7 +75,15 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
         }
 
         const text: string = document.getText();
-        const parsed = yaml.parse(text);
+        let parsed;
+        try {
+            parsed = yaml.parse(text);
+        } catch (error) {
+            App.instance.showMessage(`Invalid Symfony YAML config: ${error}`, 'warning');
+
+            return [];
+        }
+
         const lenses: Array<CodeLens> = [];
 
         if (parsed?.services) {
