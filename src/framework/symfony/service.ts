@@ -52,8 +52,16 @@ export default class Symfony {
 
         const doc = await workspace.openTextDocument(uri);
         const text = doc.getText();
-        const parsed = yaml.parse(text);
         this.services.clear();
+        let parsed;
+        try {
+            parsed = yaml.parse(text);
+        } catch (error) {
+            App.instance.showMessage(`Invalid Symfony services config: ${error}`, 'warning');
+
+            return;
+        }
+
         if (parsed.services) {
             for (const [serviceId, config] of Object.entries(parsed.services)) {
                 if (typeof config === 'object' && (config as any).class) {

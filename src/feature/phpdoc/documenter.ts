@@ -8,7 +8,9 @@ import {
     M_ERROR,
     M_INFO,
 } from '../../constants';
-import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock} from './block';
+import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from './block';
+
+const D_REGEX_VARIABLE = /^\s*(\$\w+)\s*=/u;
 
 export default class Documenter {
     public blocks: Array<Block>;
@@ -17,18 +19,11 @@ export default class Documenter {
         this.blocks = [];
         const {document} = App.instance.editor;
         positions.forEach((p) => {
-            if (!this.hasExistingPhpDoc(document, p)) {
-                const {text} = App.instance.editor.document.lineAt(p.line);
-                if (text.match(D_REGEX_CLASS)) {
-                    this.blocks.push(new ClassBlock(p));
-                } else if (text.match(D_REGEX_PROPERTY)) {
-                    this.blocks.push(new PropertyBlock(p));
-                } else if (text.match(D_REGEX_CONSTANT)) {
-                    this.blocks.push(new ConstantBlock(p));
-                } else if (text.match(D_REGEX_FUNCTION)) {
-                    this.blocks.push(new FunctionBlock(p));
-                } else {
-                    this.blocks.push(new Block(p));
+            const declarationPosition = this.resolveDeclarationPosition(document, p);
+            if (declarationPosition && !this.hasExistingPhpDoc(document, declarationPosition)) {
+                const block = this.createBlock(document, declarationPosition);
+                if (block) {
+                    this.blocks.push(block);
                 }
             }
         });
@@ -38,6 +33,14 @@ export default class Documenter {
     }
 
     public render() {
+        const {document} = App.instance.editor;
+        const importState = this.collectImportState(document);
+        this.blocks.forEach((block) => {
+            if (block instanceof FunctionBlock) {
+                block.prepareThrowsForRender(importState.imports, importState.aliases, importState.namespaceName);
+            }
+        });
+
         const data: Array<{startLine: number, template: string}> = [];
         this.blocks.forEach((b) => {
             try {
@@ -51,6 +54,21 @@ export default class Documenter {
             }
         });
         App.instance.editor.edit((edit: TextEditorEdit) => {
+            const importsToInsert = this.blocks
+                .flatMap((block) => block.importsToAdd)
+                .filter((value, index, array) => array.indexOf(value) === index);
+            const importInsert = this.buildImportInsert(document, importsToInsert, importState);
+            if (importInsert) {
+                if (typeof importInsert.replaceUntilLine === 'number') {
+                    edit.replace(
+                        new Range(importInsert.position, new Position(importInsert.replaceUntilLine, 0)),
+                        importInsert.text,
+                    );
+                } else {
+                    edit.insert(importInsert.position, importInsert.text);
+                }
+            }
+
             data.forEach((d) => {
                 edit.replace(new Position(d.startLine, 0), d.template);
             });
@@ -95,6 +113,13 @@ export default class Documenter {
                 type = matches.includes('static') ? 'Static function' : 'Function';
             }
 
+            matches = D_REGEX_VARIABLE.exec(lineText) as Array<string>|null;
+            if (matches !== null) {
+                charNumber = document.lineAt(lineNumber).firstNonWhitespaceCharacterIndex;
+                name = matches[1] as string;
+                type = 'Variable';
+            }
+
             if (charNumber !== null && name !== null && type !== null) {
                 positions.push({
                     name: `${positions.length + 1}. ${name} (${type})`,
@@ -124,5 +149,158 @@ export default class Documenter {
         const textBefore = document.getText(range);
 
         return /\/\*\*[\s\S]*?\*\//.test(textBefore);
+    }
+
+    private createBlock(document: TextDocument, position: Position): Block | null {
+        const {text} = document.lineAt(position.line);
+        if (text.match(D_REGEX_CLASS)) {
+            return new ClassBlock(position);
+        }
+
+        if (text.match(D_REGEX_PROPERTY)) {
+            return new PropertyBlock(position);
+        }
+
+        if (text.match(D_REGEX_CONSTANT)) {
+            return new ConstantBlock(position);
+        }
+
+        if (text.match(D_REGEX_FUNCTION)) {
+            return new FunctionBlock(position);
+        }
+
+        if (text.match(D_REGEX_VARIABLE)) {
+            return new VariableBlock(position);
+        }
+
+        return null;
+    }
+
+    private resolveDeclarationPosition(document: TextDocument, position: Position): Position | null {
+        const currentText = document.lineAt(position.line).text;
+        if (this.createBlock(document, position) !== null) {
+            return position;
+        }
+
+        if (currentText.trim().startsWith('#[')) {
+            for (let lineNumber = position.line + 1; lineNumber < document.lineCount; lineNumber++) {
+                const lineText = document.lineAt(lineNumber).text.trim();
+                if (lineText === '' || lineText.startsWith('#[')) {
+                    continue;
+                }
+
+                const resolved = new Position(lineNumber, document.lineAt(lineNumber).firstNonWhitespaceCharacterIndex);
+
+                return this.createBlock(document, resolved) !== null ? resolved : null;
+            }
+        }
+
+        return null;
+    }
+
+    private collectImportState(document: TextDocument): {
+        imports: Set<string>,
+        aliases: Set<string>,
+        useLines: Array<string>,
+        firstUseLine: number,
+        namespaceName: string | null,
+        lastUseLine: number,
+        namespaceLine: number,
+    } {
+        const imports = new Set<string>();
+        const aliases = new Set<string>();
+        const useLines: Array<string> = [];
+        let namespaceName: string | null = null;
+        let firstUseLine = -1;
+        let lastUseLine = -1;
+        let namespaceLine = -1;
+
+        for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
+            const lineText = document.lineAt(lineNumber).text.trim();
+            const namespaceMatch = lineText.match(/^namespace\s+([^;]+);$/u);
+            if (namespaceMatch) {
+                namespaceName = namespaceMatch[1] as string;
+                namespaceLine = lineNumber;
+            }
+
+            const useMatch = lineText.match(/^use\s+([^;]+);$/u);
+            if (!useMatch) {
+                continue;
+            }
+
+            if (firstUseLine === -1) {
+                firstUseLine = lineNumber;
+            }
+            lastUseLine = lineNumber;
+            useLines.push(lineText);
+            const parts = (useMatch[1] as string).split(/\s+as\s+/iu);
+            const fqcn = (parts[0] as string).trim().replace(/^\\/, '');
+            const alias = (parts[1] as string | undefined)?.trim() ?? fqcn.split('\\').pop() ?? fqcn;
+            imports.add(fqcn);
+            aliases.add(alias);
+        }
+
+        return {
+            imports,
+            aliases,
+            useLines,
+            firstUseLine,
+            namespaceName,
+            lastUseLine,
+            namespaceLine,
+        };
+    }
+
+    private buildImportInsert(
+        document: TextDocument,
+        importsToInsert: Array<string>,
+        importState: {
+            imports: Set<string>,
+            aliases: Set<string>,
+            useLines: Array<string>,
+            firstUseLine: number,
+            namespaceName: string | null,
+            lastUseLine: number,
+            namespaceLine: number,
+        },
+    ): {position: Position, text: string, replaceUntilLine?: number} | null {
+        if (importsToInsert.length === 0) {
+            return null;
+        }
+
+        const lines = [
+            ...importState.useLines,
+            ...importsToInsert.map((entry) => `use ${entry};`),
+        ]
+            .filter((value, index, array) => array.indexOf(value) === index)
+            .sort((left, right) => left.localeCompare(right));
+        let insertLine = 0;
+        let prefix = '';
+        let suffix = '';
+        let replaceUntilLine: number | undefined;
+
+        if (importState.firstUseLine >= 0 && importState.lastUseLine >= 0) {
+            insertLine = importState.firstUseLine;
+            replaceUntilLine = importState.lastUseLine + 1;
+        } else if (importState.namespaceLine >= 0) {
+            insertLine = importState.namespaceLine + 1;
+            prefix = '\n';
+        } else {
+            insertLine = 0;
+        }
+
+        if (
+            typeof replaceUntilLine === 'undefined'
+            && insertLine < document.lineCount
+            && document.lineAt(insertLine).text.trim() !== ''
+        ) {
+            suffix = '\n';
+        }
+
+        return {
+            position: new Position(insertLine, 0),
+            text: `${prefix}${lines.join('\n')}\n${suffix}`,
+            replaceUntilLine,
+        };
     }
 }

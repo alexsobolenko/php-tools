@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.4.6",
+    "version": "0.5.4",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -15,7 +15,7 @@
     "icon": "assets/icon.png",
     "publisher": "alexsobolenko",
     "engines": {
-        "vscode": "^1.96.0"
+        "vscode": "^1.103.0"
     },
     "categories": [
         "Other",
@@ -221,21 +221,22 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
+        "package": "vsce package",
         "publish": "vsce publish"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.10",
-        "@types/node": "20.x",
-        "@types/vscode": "^1.96.0",
-        "@typescript-eslint/eslint-plugin": "^8.17.0",
-        "@typescript-eslint/parser": "^8.17.0",
-        "@vscode/test-cli": "^0.0.10",
-        "@vscode/test-electron": "^2.4.1",
-        "eslint": "^9.16.0",
-        "typescript": "^5.7.2"
+        "@types/node": "^24.3.1",
+        "@types/vscode": "^1.103.0",
+        "@typescript-eslint/eslint-plugin": "^8.42.0",
+        "@typescript-eslint/parser": "^8.42.0",
+        "@vscode/test-electron": "^2.5.2",
+        "@vscode/vsce": "^3.6.0",
+        "eslint": "^9.35.0",
+        "typescript": "^5.8.3"
     },
     "dependencies": {
-        "php-parser": "^3.2.2",
-        "yaml": "^2.7.1"
+        "php-parser": "^3.2.5",
+        "yaml": "^2.8.1"
     }
 }

@@ -1,5 +1,40 @@
 # Change Log
 
+## [0.5.4] - 2026-04-10
+
+### Changed
+
+- Improved PHPDoc generation for variables, properties with hooks, and methods with attributes
+- Improved `@throws` analysis for method and function calls, including cross-class calls by PSR-4 autoload
+- Added automatic import insertion for generated exception types in PHPDoc
+- Kept global exceptions like fully qualified without adding unnecessary imports
+
+## [0.5.3] - 2026-04-10
+
+### Changed
+
+- Added one-line PHPDoc generation for local variables
+
+## [0.5.2] - 2026-04-10
+
+### Changed
+
+- Updated getter and setter generation
+
+## [0.5.1] - 2026-04-10
+
+### Changed
+
+- Updated framework integrations
+
+## [0.5.0] - 2026-04-10
+
+### Changed
+
+- Refactored
+- Updated dependencies
+- Fixed `php-parser` usage
+
 ## [0.4.6] - 2026-01-22
 
 ### Changed

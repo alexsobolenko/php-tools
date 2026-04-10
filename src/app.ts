@@ -26,7 +26,14 @@ export default class App {
             const composerFile = path.join(wf, 'composer.json');
             if (fs.existsSync(composerFile)) {
                 const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
-                const data = JSON.parse(composerFileContent);
+                let data;
+                try {
+                    data = JSON.parse(composerFileContent);
+                } catch (error) {
+                    this.showMessage(`Invalid composer.json: ${error}`, M_WARNING);
+                    data = {};
+                }
+
                 isSymfonyUsed = Symfony.checkComposerData(data);
                 isYii2Used = Yii2.checkComposerData(data);
 
@@ -43,7 +50,7 @@ export default class App {
                 this._project.set('php-version', phpVersion);
 
                 this._project.set('php-parser-params', {
-                    parser: {extractDoc: true, version: phpVersion},
+                    parser: {extractDoc: true, suppressErrors: true, version: phpVersion},
                     ast: {withPositions: true},
                 });
 
