@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.5.0] - 2026-04-10
+
+### Changed
+
+- Refactored
+- Updated dependencies
+- Fixed `php-parser` usage
+
 ## [0.4.6] - 2026-01-22
 
 ### Changed

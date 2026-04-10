@@ -122,10 +122,14 @@ export async function activate(context: ExtensionContext) {
 }
 
 async function symfonyServicesYamlUri(): Promise<Uri|null> {
+    if (!workspace.workspaceFolders || workspace.workspaceFolders.length === 0) {
+        return null;
+    }
+
     const candidates = ['config/services.yaml', 'config/services.yml', 'app/config/services.yaml'];
     for (const candidate of candidates) {
         try {
-            const uri = Uri.joinPath(workspace.workspaceFolders![0].uri, candidate);
+            const uri = Uri.joinPath(workspace.workspaceFolders[0].uri, candidate);
             await workspace.fs.stat(uri);
 
             return uri;

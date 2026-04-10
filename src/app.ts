@@ -26,7 +26,14 @@ export default class App {
             const composerFile = path.join(wf, 'composer.json');
             if (fs.existsSync(composerFile)) {
                 const composerFileContent = fs.readFileSync(composerFile, 'utf-8');
-                const data = JSON.parse(composerFileContent);
+                let data;
+                try {
+                    data = JSON.parse(composerFileContent);
+                } catch (error) {
+                    this.showMessage(`Invalid composer.json: ${error}`, M_WARNING);
+                    data = {};
+                }
+
                 isSymfonyUsed = Symfony.checkComposerData(data);
                 isYii2Used = Yii2.checkComposerData(data);
 
