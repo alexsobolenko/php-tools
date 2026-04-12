@@ -1,4 +1,12 @@
-import {CodeLensProvider, TextEditor, WorkspaceConfiguration, WorkspaceFolder, window, workspace} from 'vscode';
+import {
+    CodeLensProvider,
+    CompletionItemProvider,
+    TextEditor,
+    WorkspaceConfiguration,
+    WorkspaceFolder,
+    window,
+    workspace,
+} from 'vscode';
 import fs from 'fs';
 import path from 'path';
 import {M_ERROR, M_INFO, M_WARNING} from './constants';
@@ -103,6 +111,12 @@ export default class App {
         return [
             ...this._symfony.providers,
             ...this._yii2.providers,
+        ];
+    }
+
+    public get completionProviders(): Array<{selector: Object, provider: CompletionItemProvider, triggers?: string[]}> {
+        return [
+            ...this._symfony.completionProviders,
         ];
     }
 

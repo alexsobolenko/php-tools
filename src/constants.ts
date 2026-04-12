@@ -17,6 +17,7 @@ export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
 export const CMD_GENERATE_PHPDOC_MASTER = 'advanced-php-tools.generate-php-doc-master';
 
 export const CMD_GENERATE_CONSTRUCTOR = 'advanced-php-tools.generate-constructor';
+export const CMD_SYMFONY_CREATE_SERVICE = 'advanced-php-tools.symfony-create-service';
 
 /* parameters */
 export const A_DOC_CONST_DESCR = 'phpdoc-constant-show-description';

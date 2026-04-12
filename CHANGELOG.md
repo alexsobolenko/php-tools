@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.6.0] - 2026-04-12
+
+### Changed
+
+- Expanded Symfony integration with service creation, constructor argument completion, Twig template navigation, and Doctrine DQL field completion
+
 ## [0.5.5] - 2026-04-12
 
 ### Changed
