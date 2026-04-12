@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.5] - 2026-04-12
+
+### Changed
+
+- Refactored PHPDoc module structure and split block handlers into separate files
+
 ## [0.5.4] - 2026-04-10
 
 ### Changed
