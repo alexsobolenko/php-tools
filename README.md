@@ -47,8 +47,11 @@ Quickly scaffold various PHP constructs with proper syntax and structure:
 Intelligent documentation generation with customizable formatting:
 - Function/method documentation
 - Property documentation
+- One-line `@var` PHPDoc for local variables
 - Configurable empty lines and spacing
-- Return type and throws annotation support
+- Return type and `@throws` annotation support
+- Improved exception import handling in generated PHPDoc
+- Support for properties with hooks and methods with attributes
 - Description generation options
 
 **Commands:**
@@ -71,7 +74,7 @@ Convert class properties to constructor arguments with:
 ### 5. Symfony Framework Support
 Specialized tools for Symfony development:
 
-- Service configuration navigation (jump between service.yaml and class)
+- Service configuration navigation (jump between `services.yaml` and class declaration)
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services-yaml.gif)
 
 - Quick access to service definitions
@@ -99,14 +102,14 @@ Customize the extension behavior through these settings:
 - `advanced-php-tools.builder-strict-types` - Add `declare(strict_types=1)` (default: `true`)
 - `advanced-php-tools.builder-generate-phpdoc` - Generate objects with phpdoc (default: `false`)
 - `advanced-php-tools.setter-return-self` - Make setters return `$this` for fluent interfaces (default: `false`)
-- `advanced-php-tools.getter-setter-generate-phpdoc` - Generate phpdoc for getter/setter (default: `false`)
+- `advanced-php-tools.getter-setter-generate-phpdoc` - Generate phpdoc for getter/setter (default: `true`)
 - `advanced-php-tools.phpdoc-function-show-description` - Add descriptions to function docs (default: `false`)
 - `advanced-php-tools.phpdoc-property-show-description` - Add description to property PHPDoc (default: `false`)
 - `advanced-php-tools.phpdoc-constant-show-description` - Add description to constant PHPDoc (default: `false`)
 - `advanced-php-tools.phpdoc-function-return-void` - Add return to PHPDoc if returns void (default: `false`)
 - `advanced-php-tools.phpdoc-empty-lines-after-description` - Control spacing after descriptions (default: `0`)
-- `advanced-php-tools.phpdoc-empty-lines-before-return` - Add empty lines before return in PHPDoc (default: `0`, ignored when return not show or there are not params)
-- `advanced-php-tools.phpdoc-empty-lines-before-throws` - Add empty lines before throws in PHPDoc (default: `0`, ignored when there are not throws)
+- `advanced-php-tools.phpdoc-empty-lines-before-return` - Add empty lines before return in PHPDoc (default: `0`, ignored when return is hidden or there are no params)
+- `advanced-php-tools.phpdoc-empty-lines-before-throws` - Add empty lines before throws in PHPDoc (default: `0`, ignored when there are no throws)
 - `advanced-php-tools.phpdoc-show-throws-on-diff-lines` - Format throws on separate lines (default: `true`)
 - `advanced-php-tools.constructor-args-one-line-max-length` - Line length threshold for single-line constructors (default: `120`)
 

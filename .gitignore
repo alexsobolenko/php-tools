@@ -2,6 +2,6 @@
 node_modules/
 out/
 advanced-php-tools-*.vsix
-docs/
+TODO.md
 AGENTS.md
 .codex
