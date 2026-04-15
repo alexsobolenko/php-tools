@@ -2,6 +2,11 @@ import {Position, TextLine} from 'vscode';
 import {Engine, Program} from 'php-parser';
 import App from '../../app';
 
+const DEFAULT_PHP_PARSER_PARAMS = {
+    parser: {extractDoc: true, suppressErrors: true, version: '8.4'},
+    ast: {withPositions: true},
+};
+
 export class Block {
     public type: string;
     public name: string;
@@ -12,7 +17,7 @@ export class Block {
     public importsToAdd: Array<string>;
 
     public constructor(position: Position) {
-        this.phpParser = new Engine(App.instance.composer('php-parser-params'));
+        this.phpParser = new Engine(App.instance.composer('php-parser-params', DEFAULT_PHP_PARSER_PARAMS));
         this.type = 'undefined';
         this.name = '';
         this.importsToAdd = [];

@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.6.1] - 2026-04-15
+
+### Changed
+
+- Fixed PHPDoc generation for constructors with promoted properties and modern PHP syntax when parser project settings are unavailable or too old
+
 ## [0.6.0] - 2026-04-12
 
 ### Changed

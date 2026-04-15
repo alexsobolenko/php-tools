@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {Position, TextDocument} from 'vscode';
-import {Name, Parameter} from 'php-parser';
+import {Engine, Name, Parameter} from 'php-parser';
 import App from '../../app';
 import {
     A_DOC_LINES_AFTER_DESCR,
@@ -30,6 +30,11 @@ type TThrowsContext = {
 };
 type TCallable = {node: any, ownerClass: any | null};
 type TResolvedCallable = {node: any, className: string | null, context: TThrowsContext};
+
+const FALLBACK_PHP_PARSER_PARAMS = {
+    parser: {extractDoc: true, suppressErrors: true, version: '8.4'},
+    ast: {withPositions: true},
+};
 
 export class FunctionBlock extends Block {
     public params: Array<IParameter>;
@@ -61,12 +66,22 @@ export class FunctionBlock extends Block {
             const ast = this.parseCode(code);
             const namespaceName = this.extractNamespaceName(ast);
             const uses = collectUseStatements(ast);
-            const callable = this.findCallableAtLine(ast, this.startLine);
+            const callable = this.findCallableAtLine(ast, this.startLine)
+                ?? this.parseCallableDeclaration(document, this.startLine);
             if (callable === null) {
                 throw new Error('Invalid method declaration');
             }
 
-            this.params = callable.node.arguments.map((arg: Parameter) => this.convertParam(arg));
+            try {
+                this.params = callable.node.arguments.map((arg: Parameter) => this.convertParam(arg));
+            } catch (error) {
+                const fallbackCallable = this.parseCallableDeclaration(document, this.startLine);
+                if (fallbackCallable === null) {
+                    throw error;
+                }
+
+                this.params = fallbackCallable.node.arguments.map((arg: Parameter) => this.convertParam(arg));
+            }
 
             const methodMap = callable.ownerClass
                 ? this.collectClassMethods(callable.ownerClass)
@@ -256,6 +271,60 @@ export class FunctionBlock extends Block {
         });
 
         return result;
+    }
+
+    private parseCallableDeclaration(document: TextDocument, line: number): TCallable | null {
+        const declaration = this.extractCallableDeclaration(document, line);
+        if (declaration === null) {
+            return null;
+        }
+
+        try {
+            const parser = new Engine(FALLBACK_PHP_PARSER_PARAMS);
+            const program = parser.parseCode(`<?php\nclass PhpToolsPhpDocCallable\n{\n${declaration}\n{\n}\n}\n`, '');
+
+            return this.findCallableAtLine(program, 3);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    private extractCallableDeclaration(document: TextDocument, line: number): string | null {
+        const parts: Array<string> = [];
+        let hasArguments = false;
+        let parenthesesDepth = 0;
+        let finished = false;
+
+        for (let lineNumber = line; lineNumber < document.lineCount && !finished; lineNumber++) {
+            const lineText = document.lineAt(lineNumber).text;
+            let buffer = '';
+
+            for (const char of lineText) {
+                if (char === '(') {
+                    hasArguments = true;
+                    parenthesesDepth++;
+                }
+
+                if (char === ')') {
+                    parenthesesDepth--;
+                }
+
+                if (hasArguments && parenthesesDepth === 0 && ['{', ';'].includes(char)) {
+                    finished = true;
+                    break;
+                }
+
+                buffer += char;
+            }
+
+            parts.push(buffer);
+        }
+
+        if (!hasArguments || parenthesesDepth !== 0) {
+            return null;
+        }
+
+        return parts.join('\n');
     }
 
     private collectClassMethods(ownerClass: any): Map<string, any> {
