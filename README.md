@@ -71,7 +71,45 @@ Convert class properties to constructor arguments with:
 **Command:**
 - `Advanced PHP Tools: Generate class constructor`
 
-### 5. Symfony Framework Support
+### 5. String Conversion
+
+Convert PHP string expressions under the cursor between concatenation, `sprintf(...)`, and double-quoted interpolation.
+
+**Commands:**
+- `Advanced PHP Tools: Convert string to concatenation`
+- `Advanced PHP Tools: Convert string to sprintf`
+- `Advanced PHP Tools: Convert string to interpolation`
+
+**Examples:**
+
+Convert string to concatenation:
+```php
+// Before
+$message = sprintf('Hello %s!', $name);
+
+// After
+$message = 'Hello ' . $name . '!';
+```
+
+Convert string to sprintf:
+```php
+// Before
+$message = 'Hello ' . $name . '!';
+
+// After
+$message = sprintf('Hello %s!', $name);
+```
+
+Convert string to interpolation:
+```php
+// Before
+$message = 'Hello ' . $name . '!';
+
+// After
+$message = "Hello {$name}!";
+```
+
+### 6. Symfony Framework Support
 Specialized tools for Symfony development:
 
 - Service configuration navigation (jump between `services.yaml` and class declaration)
@@ -83,7 +121,7 @@ Specialized tools for Symfony development:
 - Twig template navigation
 ![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-templates.gif)
 
-### 6. Yii2 Framework Support
+### 7. Yii2 Framework Support
 Specialized tools for Yii2 development:
 
 - Service configuration navigation (jump from configuration to class)

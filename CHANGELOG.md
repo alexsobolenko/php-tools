@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+### Added
+
+- Added string conversion between concatenation, `sprintf(...)`, and double-quoted interpolation
+
 ## [0.6.1] - 2026-04-15
 
 ### Changed

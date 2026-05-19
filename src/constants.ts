@@ -17,7 +17,17 @@ export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
 export const CMD_GENERATE_PHPDOC_MASTER = 'advanced-php-tools.generate-php-doc-master';
 
 export const CMD_GENERATE_CONSTRUCTOR = 'advanced-php-tools.generate-constructor';
+
 export const CMD_SYMFONY_CREATE_SERVICE = 'advanced-php-tools.symfony-create-service';
+
+export const CMD_CONVERT_STRING_TO_CONCATENATION = 'advanced-php-tools.convert-string-to-concatenation';
+export const CMD_CONVERT_STRING_TO_SPRINTF = 'advanced-php-tools.convert-string-to-sprintf';
+export const CMD_CONVERT_STRING_TO_INTERPOLATION = 'advanced-php-tools.convert-string-to-interpolation';
+
+/* string conversion */
+export const S_CONCATENATION = 's_concatenation';
+export const S_INTERPOLATION = 's_interpolation';
+export const S_SPRINTF = 's_sprintf';
 
 /* parameters */
 export const A_DOC_CONST_DESCR = 'phpdoc-constant-show-description';

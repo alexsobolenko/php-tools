@@ -4,7 +4,11 @@ import Construct from './feature/constructor/construct';
 import Builder from './feature/fabric/builder';
 import Resolver from './feature/getters-setters/resolver';
 import Documenter from './feature/phpdoc/documenter';
+import StringConverter from './feature/string-conversion/converter';
 import {
+    CMD_CONVERT_STRING_TO_CONCATENATION,
+    CMD_CONVERT_STRING_TO_INTERPOLATION,
+    CMD_CONVERT_STRING_TO_SPRINTF,
     CMD_GENERATE_ABSTRACT_CLASS,
     CMD_GENERATE_CLASS,
     CMD_GENERATE_CONSTRUCTOR,
@@ -29,6 +33,9 @@ import {
     F_TRAIT,
     R_GETTER,
     R_SETTER,
+    S_CONCATENATION,
+    S_INTERPOLATION,
+    S_SPRINTF,
 } from './constants';
 
 export async function activate(context: ExtensionContext) {
@@ -107,6 +114,20 @@ export async function activate(context: ExtensionContext) {
         const construct = new Construct();
         await construct.fill();
         construct.render();
+    }));
+
+    /* string conversions */
+    context.subscriptions.push(commands.registerCommand(CMD_CONVERT_STRING_TO_CONCATENATION, () => {
+        const converter = new StringConverter(S_CONCATENATION);
+        converter.render();
+    }));
+    context.subscriptions.push(commands.registerCommand(CMD_CONVERT_STRING_TO_SPRINTF, () => {
+        const converter = new StringConverter(S_SPRINTF);
+        converter.render();
+    }));
+    context.subscriptions.push(commands.registerCommand(CMD_CONVERT_STRING_TO_INTERPOLATION, () => {
+        const converter = new StringConverter(S_INTERPOLATION);
+        converter.render();
     }));
 
     /* php frameworks */
