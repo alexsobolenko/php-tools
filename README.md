@@ -6,7 +6,7 @@ A comprehensive extension for PHP development in Visual Studio Code that boosts 
 
 ### 1. Getter/Setter Generation
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/getters-setters.gif)
+![Example](./assets/gifs/getters-setters.gif)
 
 Automatically generate getters and setters for class properties with configurable options:
 - Supports both traditional and fluent (return $this) setter styles
@@ -23,7 +23,7 @@ Automatically generate getters and setters for class properties with configurabl
 
 ### 2. Class/Object Generation
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/fabric.gif)
+![Example](./assets/gifs/fabric.gif)
 
 Quickly scaffold various PHP constructs with proper syntax and structure:
 - Regular, abstract and final classes
@@ -42,7 +42,7 @@ Quickly scaffold various PHP constructs with proper syntax and structure:
 
 ### 3. PHPDoc Generation
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/phpdoc.gif)
+![Example](./assets/gifs/phpdoc.gif)
 
 Intelligent documentation generation with customizable formatting:
 - Function/method documentation
@@ -60,7 +60,7 @@ Intelligent documentation generation with customizable formatting:
 
 ### 4. Constructor Generation
 
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/construct.gif)
+![Example](./assets/gifs/construct.gif)
 
 Convert class properties to constructor arguments with:
 - Automatic type inference
@@ -113,25 +113,25 @@ $message = "Hello {$name}!";
 Specialized tools for Symfony development:
 
 - Service configuration navigation (jump between `services.yaml` and class declaration)
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services-yaml.gif)
+![Example](./assets/gifs/symfony-services-yaml.gif)
 
 - Quick access to service definitions
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-services.gif)
+![Example](./assets/gifs/symfony-services.gif)
 
 - Twig template navigation
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/symfony-templates.gif)
+![Example](./assets/gifs/symfony-templates.gif)
 
 ### 7. Yii2 Framework Support
 Specialized tools for Yii2 development:
 
 - Service configuration navigation (jump from configuration to class)
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/yii2-config-to-class.gif)
+![Example](./assets/gifs/yii2-config-to-class.gif)
 
 - Quick access to service definitions (jump from class to configuration)
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/yii2-class-to-config.gif)
+![Example](./assets/gifs/yii2-class-to-config.gif)
 
 - View template navigation from controller
-![Example](https://raw.githubusercontent.com/alexsobolenko/php-tools/master/assets/gifs/yii2-views.gif)
+![Example](./assets/gifs/yii2-views.gif)
 
 ## Configuration Options
 
