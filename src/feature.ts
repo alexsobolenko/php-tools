@@ -1,9 +1,18 @@
-import {window, workspace} from 'vscode';
+import {TextEditor, window, workspace} from 'vscode';
 import {EXT_ID, MESSAGE} from './constants';
 
 export default abstract class Feature {
     protected getConfig<T>(key: string, defaultValue: T): T {
         return workspace.getConfiguration(EXT_ID).get<T>(key, defaultValue);
+    }
+
+    protected get activeEditor(): TextEditor | undefined {
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return undefined;
+        }
+
+        return editor;
     }
 
     protected showMessage(buffer: string, type: string = 'info') {

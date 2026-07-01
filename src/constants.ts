@@ -33,7 +33,7 @@ export const CONV = {
     CONCATENATION: 's_concatenation',
     INTERPOLATION: 's_interpolation',
     SPRINTF: 's_sprintf',
-}
+};
 
 /* parameters */
 export const DOC_CONST_DESCR = 'phpdoc-constant-show-description';
