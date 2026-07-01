@@ -2,5 +2,4 @@
 node_modules/
 out/
 advanced-php-tools-*.vsix
-AGENTS.md
-.codex
+src2

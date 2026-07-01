@@ -1,85 +1,100 @@
+export const EXT_ID = 'advanced-php-tools';
+
 /* commands */
-export const CMD_INSERT_GETTER = 'advanced-php-tools.insert-getter';
-export const CMD_INSERT_SETTER = 'advanced-php-tools.insert-setter';
-export const CMD_INSERT_GETTER_SETTER = 'advanced-php-tools.insert-getter-setter';
-export const CMD_INSERT_GETTER_MASTER = 'advanced-php-tools.insert-getter-master';
-export const CMD_INSERT_SETTER_MASTER = 'advanced-php-tools.insert-setter-master';
-export const CMD_INSERT_GETTER_SETTER_MASTER = 'advanced-php-tools.insert-getter-setter-master';
+export const COMMAND = {
+    INSERT_GETTER: 'advanced-php-tools.insert-getter',
+    INSERT_SETTER: 'advanced-php-tools.insert-setter',
+    INSERT_GETTER_SETTER: 'advanced-php-tools.insert-getter-setter',
+    INSERT_GETTER_MASTER: 'advanced-php-tools.insert-getter-master',
+    INSERT_SETTER_MASTER: 'advanced-php-tools.insert-setter-master',
+    INSERT_GETTER_SETTER_MASTER: 'advanced-php-tools.insert-getter-setter-master',
 
-export const CMD_GENERATE_CLASS = 'advanced-php-tools.generate-class';
-export const CMD_GENERATE_ABSTRACT_CLASS = 'advanced-php-tools.generate-abstract-class';
-export const CMD_GENERATE_FINAL_CLASS = 'advanced-php-tools.generate-final-class';
-export const CMD_GENERATE_ENUM = 'advanced-php-tools.generate-enum';
-export const CMD_GENERATE_INTERFACE = 'advanced-php-tools.generate-interface';
-export const CMD_GENERATE_TRAIT = 'advanced-php-tools.generate-trait';
+    GENERATE_CLASS: 'advanced-php-tools.generate-class',
+    GENERATE_ABSTRACT_CLASS: 'advanced-php-tools.generate-abstract-class',
+    GENERATE_FINAL_CLASS: 'advanced-php-tools.generate-final-class',
+    GENERATE_ENUM: 'advanced-php-tools.generate-enum',
+    GENERATE_INTERFACE: 'advanced-php-tools.generate-interface',
+    GENERATE_TRAIT: 'advanced-php-tools.generate-trait',
 
-export const CMD_GENERATE_PHPDOC = 'advanced-php-tools.generate-php-doc';
-export const CMD_GENERATE_PHPDOC_MASTER = 'advanced-php-tools.generate-php-doc-master';
+    GENERATE_PHPDOC: 'advanced-php-tools.generate-php-doc',
+    GENERATE_PHPDOC_MASTER: 'advanced-php-tools.generate-php-doc-master',
 
-export const CMD_GENERATE_CONSTRUCTOR = 'advanced-php-tools.generate-constructor';
+    GENERATE_CONSTRUCTOR: 'advanced-php-tools.generate-constructor',
 
-export const CMD_SYMFONY_CREATE_SERVICE = 'advanced-php-tools.symfony-create-service';
+    SYMFONY_CREATE_SERVICE: 'advanced-php-tools.symfony-create-service',
 
-export const CMD_CONVERT_STRING_TO_CONCATENATION = 'advanced-php-tools.convert-string-to-concatenation';
-export const CMD_CONVERT_STRING_TO_SPRINTF = 'advanced-php-tools.convert-string-to-sprintf';
-export const CMD_CONVERT_STRING_TO_INTERPOLATION = 'advanced-php-tools.convert-string-to-interpolation';
+    CONVERT_STRING_TO_CONCATENATION: 'advanced-php-tools.convert-string-to-concatenation',
+    CONVERT_STRING_TO_SPRINTF: 'advanced-php-tools.convert-string-to-sprintf',
+    CONVERT_STRING_TO_INTERPOLATION: 'advanced-php-tools.convert-string-to-interpolation',
+};
 
 /* string conversion */
-export const S_CONCATENATION = 's_concatenation';
-export const S_INTERPOLATION = 's_interpolation';
-export const S_SPRINTF = 's_sprintf';
+export const CONV = {
+    CONCATENATION: 's_concatenation',
+    INTERPOLATION: 's_interpolation',
+    SPRINTF: 's_sprintf',
+}
 
 /* parameters */
-export const A_DOC_CONST_DESCR = 'phpdoc-constant-show-description';
-export const A_DOC_LINES_AFTER_DESCR = 'phpdoc-empty-lines-after-description';
-export const A_DOC_LINES_BEFORE_RETURN = 'phpdoc-empty-lines-before-return';
-export const A_DOC_LINES_BEFORE_THROWS = 'phpdoc-empty-lines-before-throws';
-export const A_DOC_PROPERTY_DESCR = 'phpdoc-property-show-description';
-export const A_DOC_RETURN_VOID = 'phpdoc-function-return-void';
-export const A_DOC_SHOW_DESCR = 'phpdoc-function-show-description';
-export const A_DOC_SHOW_THROWS_ON_DIFF_LINES = 'phpdoc-show-throws-on-diff-lines';
-
-export const A_FAB_GENERATE_PHPDOC = 'builder-generate-phpdoc';
-export const A_FAB_STRICT_TYPES = 'builder-strict-types';
-
-export const A_GS_GENERATE_PHPDOC = 'getter-setter-generate-phpdoc';
-export const A_GS_RETURN_SELF = 'setter-return-self';
+export const DOC_CONST_DESCR = 'phpdoc-constant-show-description';
+export const DOC_LINES_AFTER_DESCR = 'phpdoc-empty-lines-after-description';
+export const DOC_LINES_BEFORE_RETURN = 'phpdoc-empty-lines-before-return';
+export const DOC_LINES_BEFORE_THROWS = 'phpdoc-empty-lines-before-throws';
+export const DOC_PROPERTY_DESCR = 'phpdoc-property-show-description';
+export const DOC_RETURN_VOID = 'phpdoc-function-return-void';
+export const DOC_SHOW_DESCR = 'phpdoc-function-show-description';
+export const DOC_SHOW_THROWS_ON_DIFF_LINES = 'phpdoc-show-throws-on-diff-lines';
+export const FAB_GENERATE_PHPDOC = 'builder-generate-phpdoc';
+export const FAB_STRICT_TYPES = 'builder-strict-types';
+export const GS_GENERATE_PHPDOC = 'getter-setter-generate-phpdoc';
+export const GS_RETURN_SELF = 'setter-return-self';
 
 /* messages */
-export const M_ERROR = 'error';
-export const M_WARNING = 'warning';
-export const M_INFO = 'info';
+export const MESSAGE = {
+    ERROR: 'error',
+    WARNING: 'warning',
+    INFO: 'info',
+};
 
 /* getters-setters */
-export const R_GETTER = 'r_getter';
-export const R_SETTER = 'r_setter';
-
-export const R_UNDEFINED_PROPERTY = '__undefined__';
+export const PROP = {
+    GETTER: 'r_getter',
+    SETTER: 'r_setter',
+    UNDEFINED: '__undefined__',
+};
 
 /* fabric */
-export const F_CLASS = 'b_class';
-export const F_ABSTRACT_CLASS = 'b_abstract_class';
-export const F_FINAL_CLASS = 'b_final_class';
-export const F_INTERFACE = 'b_interface';
-export const F_TRAIT = 'b_trait';
-export const F_ENUM = 'b_enum';
+export const FABRIC = {
+    CLASS: 'b_class',
+    ABSTRACT_CLASS: 'b_abstract_class',
+    FINAL_CLASS: 'b_final_class',
+    INTERFACE: 'b_interface',
+    TRAIT: 'b_trait',
+    ENUM: 'b_enum',
+    UNDEFINED_TYPE: '__undefined__',
+};
 
-export const F_UNDEFINED_TYPE = '__undefined__';
 
 /* phpdoc */
-export const D_TYPE_FUNCTION = 'function';
-// eslint-disable-next-line max-len
-export const D_REGEX_FUNCTION = /^\s*(?:(?:abstract|final|public|protected|private|static)\s+){0,3}function\s+(\w+)\s*(\([^)]*\))?\s*(?::\s*\??\s*[\w\\]+)?/u;
-
-export const D_TYPE_CLASS = 'class';
-export const D_REGEX_CLASS = /(class|interface|trait|enum)\s+(\w+)\s?/u;
-
-export const D_TYPE_CONSTANT = 'constant';
-// eslint-disable-next-line max-len
-export const D_REGEX_CONSTANT = /(\s+)?(?:(?:public|protected|private)\s+)?const\s+?((?:\??[\w\\|]+))\s*(\w+)\s*=\s*([\p{Alpha}\p{M}\p{Nd}\p{Pc}\p{Join_C}\s$=:.,%*--+'"?><\\[\]]+)?/u;
-
-export const D_TYPE_PROPERTY = 'property';
-// eslint-disable-next-line max-len
-export const D_REGEX_PROPERTY = /(\s+)?(?:(?:public|protected|private)\s+)(?:(?:static|readonly)\s+)?((?:\??[\w\\|]+)\s+)?(\$\w+)(?:\s*=\s*([^;]+))?;?/u;
-
-export const D_VALID_KLASS = ['class', 'interface', 'trait', 'enum'];
+export const PHPDOC = {
+    FUNCTION: {
+        TYPE: 'function',
+        // eslint-disable-next-line max-len
+        REGEX: /^\s*(?:(?:abstract|final|public|protected|private|static)\s+){0,3}function\s+(\w+)\s*(\([^)]*\))?\s*(?::\s*\??\s*[\w\\]+)?/u,
+    },
+    CLASS: {
+        TYPE: 'class',
+        REGEX: /(class|interface|trait|enum)\s+(\w+)\s?/u,
+    },
+    CONSTANT: {
+        TYPE: 'constant',
+        // eslint-disable-next-line max-len
+        REGEX: /(\s+)?(?:(?:public|protected|private)\s+)?const\s+?((?:\??[\w\\|]+))\s*(\w+)\s*=\s*([\p{Alpha}\p{M}\p{Nd}\p{Pc}\p{Join_C}\s$=:.,%*--+'"?><\\[\]]+)?/u,
+    },
+    PROPERTY: {
+        TYPE: 'property',
+        // eslint-disable-next-line max-len
+        REGEX: /(\s+)?(?:(?:public|protected|private)\s+)(?:(?:static|readonly)\s+)?((?:\??[\w\\|]+)\s+)?(\$\w+)(?:\s*=\s*([^;]+))?;?/u,
+    },
+    VALID_KLASS: ['class', 'interface', 'trait', 'enum'],
+};
