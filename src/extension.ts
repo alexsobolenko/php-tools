@@ -1,10 +1,19 @@
 import {commands, ExtensionContext} from 'vscode';
+import Constructor from './feature/constructor';
 import Fabric from './feature/fabric';
 import StringConvertor from './feature/string-convertor';
 import {watchComposerJson} from './service/project';
 import {COMMAND, CONV, FABRIC} from './constants';
 
 export async function activate(context: ExtensionContext) {
+    /* constructor */
+    context.subscriptions.push(commands.registerCommand(COMMAND.GENERATE_CONSTRUCTOR, async () => {
+        const construct = new Constructor();
+        if (await construct.fill()) {
+            construct.render();
+        }
+    }));
+
     /* fabric */
     context.subscriptions.push(commands.registerCommand(COMMAND.GENERATE_CLASS, () => {
         new Fabric(FABRIC.CLASS).render();

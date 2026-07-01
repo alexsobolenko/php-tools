@@ -8,12 +8,19 @@ export class Range {
     public constructor(public readonly start: Position, public readonly end: Position) {}
 }
 
+export interface TextLine {
+    text: string;
+    firstNonWhitespaceCharacterIndex: number;
+}
+
 export interface TextDocument {
     languageId: string;
     fileName: string;
+    lineCount: number;
     getText(range?: Range): string;
     offsetAt(position: Position): number;
     positionAt(offset: number): Position;
+    lineAt(line: number): TextLine;
 }
 
 export interface TextEditorEdit {
@@ -59,6 +66,7 @@ const watcherListeners: WatcherListeners = {
 
 export const window = {
     activeTextEditor: undefined as TextEditor|undefined,
+    quickPickResult: undefined as Array<string>|undefined,
     showInformationMessage: (text: string) => {
         messages.push({text, type: 'info'});
     },
@@ -68,7 +76,12 @@ export const window = {
     showErrorMessage: (text: string) => {
         messages.push({text, type: 'error'});
     },
+    showQuickPick: async (_items: Array<string>, _options?: unknown) => window.quickPickResult,
 };
+
+export function setQuickPickResult(items: Array<string>|undefined): void {
+    window.quickPickResult = items;
+}
 
 export const workspace = {
     workspaceFolders: undefined as Array<{uri: {fsPath: string}}>|undefined,
@@ -109,6 +122,7 @@ export function triggerComposerJsonChange(): void {
 
 export function resetVscodeMock(): void {
     window.activeTextEditor = undefined;
+    window.quickPickResult = undefined;
     workspace.workspaceFolders = undefined;
     messages.length = 0;
     Object.keys(configValues).forEach((key) => delete configValues[key]);
@@ -117,19 +131,52 @@ export function resetVscodeMock(): void {
     watcherListeners.onDidDelete.length = 0;
 }
 
+function offsetAt(lines: Array<string>, position: Position): number {
+    let offset = 0;
+    for (let i = 0; i < position.line; i++) {
+        offset += (lines[i]?.length ?? 0) + 1;
+    }
+
+    return offset + position.character;
+}
+
+function positionAt(lines: Array<string>, offset: number): Position {
+    let remaining = offset;
+    for (let i = 0; i < lines.length; i++) {
+        if (remaining <= lines[i].length) {
+            return new Position(i, remaining);
+        }
+
+        remaining -= lines[i].length + 1;
+    }
+
+    return new Position(lines.length - 1, lines[lines.length - 1]?.length ?? 0);
+}
+
 export function createDocument(text: string, languageId: string = 'php', fileName: string = ''): TextDocument {
+    const lines = text.split('\n');
+
     return {
         languageId,
         fileName,
+        lineCount: lines.length,
         getText: (range?: Range) => {
             if (!range) {
                 return text;
             }
 
-            return text.slice(range.start.character, range.end.character);
+            return text.slice(offsetAt(lines, range.start), offsetAt(lines, range.end));
         },
-        offsetAt: (position: Position) => position.character,
-        positionAt: (offset: number) => new Position(0, offset),
+        offsetAt: (position: Position) => offsetAt(lines, position),
+        positionAt: (offset: number) => positionAt(lines, offset),
+        lineAt: (line: number) => {
+            const lineText = lines[line] ?? '';
+
+            return {
+                text: lineText,
+                firstNonWhitespaceCharacterIndex: lineText.length - lineText.trimStart().length,
+            };
+        },
     };
 }
 

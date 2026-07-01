@@ -48,6 +48,7 @@ export const FAB_GENERATE_PHPDOC = 'builder-generate-phpdoc';
 export const FAB_STRICT_TYPES = 'builder-strict-types';
 export const GS_GENERATE_PHPDOC = 'getter-setter-generate-phpdoc';
 export const GS_RETURN_SELF = 'setter-return-self';
+export const CONSTRUCT_ARGS_MAX_LENGTH = 'constructor-args-one-line-max-length';
 
 /* messages */
 export const MESSAGE = {
