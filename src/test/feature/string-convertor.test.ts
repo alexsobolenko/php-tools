@@ -53,7 +53,7 @@ describe('StringConvertor', () => {
 
     it('does nothing when the active editor is not a PHP file', () => {
         const source = 'sprintf(\'Hello %s!\', $name);';
-        const {editor, replacement} = createEditor(source, source.indexOf('sprintf'), 'plaintext');
+        const {editor, replacement} = createEditor(source, source.indexOf('sprintf'), {languageId: 'plaintext'});
         window.activeTextEditor = editor;
 
         new StringConvertor(CONV.INTERPOLATION).render();

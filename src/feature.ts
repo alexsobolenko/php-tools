@@ -17,8 +17,7 @@ export default abstract class Feature {
 
     protected showMessage(buffer: string, type: string = 'info') {
         const message = buffer.replace(/\$\(.+?\)\s\s/, '');
-        const data = Object.keys(MESSAGE);
-        const fcn = data.includes(type) ? type : MESSAGE.INFO;
+        const fcn = Object.values(MESSAGE).includes(type) ? type : MESSAGE.INFO;
         if (fcn === MESSAGE.ERROR) {
             window.showErrorMessage(message);
         } else if (fcn === MESSAGE.WARNING) {
@@ -30,5 +29,22 @@ export default abstract class Feature {
 
     protected uniq<T>(items: T[]): T[] {
         return [...new Set(items)];
+    }
+
+    protected capitalizeFirstCharTrimmed(input: string): string {
+        const trimmedInput = input.trim();
+        if (!trimmedInput) {
+            return trimmedInput;
+        }
+
+        return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
+    }
+
+    protected arrayToPhpdoc(data: Array<string>, tab: string = ''): string {
+        const res: Array<string> = data.map((v) => `${tab} * ${v}`);
+        res.unshift(`${tab}/**`);
+        res.push(`${tab} */`);
+
+        return `${res.join('\n')}\n`;
     }
 }

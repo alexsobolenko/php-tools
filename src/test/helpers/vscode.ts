@@ -10,13 +10,14 @@ export class Range {
 
 export interface TextDocument {
     languageId: string;
+    fileName: string;
     getText(range?: Range): string;
     offsetAt(position: Position): number;
     positionAt(offset: number): Position;
 }
 
 export interface TextEditorEdit {
-    replace(range: Range, value: string): void;
+    replace(location: Range|Position, value: string): void;
 }
 
 export interface TextEditor {
@@ -30,7 +31,31 @@ export interface RecordedMessage {
     type: 'info'|'warning'|'error';
 }
 
+export interface Disposable {
+    dispose(): void;
+}
+
+export interface FileSystemWatcher extends Disposable {
+    onDidChange(listener: () => void): Disposable;
+    onDidCreate(listener: () => void): Disposable;
+    onDidDelete(listener: () => void): Disposable;
+}
+
 export const messages: Array<RecordedMessage> = [];
+
+export const configValues: Record<string, unknown> = {};
+
+interface WatcherListeners {
+    onDidChange: Array<() => void>;
+    onDidCreate: Array<() => void>;
+    onDidDelete: Array<() => void>;
+}
+
+const watcherListeners: WatcherListeners = {
+    onDidChange: [],
+    onDidCreate: [],
+    onDidDelete: [],
+};
 
 export const window = {
     activeTextEditor: undefined as TextEditor|undefined,
@@ -46,19 +71,56 @@ export const window = {
 };
 
 export const workspace = {
+    workspaceFolders: undefined as Array<{uri: {fsPath: string}}>|undefined,
     getConfiguration: () => ({
-        get: <T>(_key: string, defaultValue: T): T => defaultValue,
+        get: <T>(key: string, defaultValue: T): T => (key in configValues ? configValues[key] as T : defaultValue),
+    }),
+    createFileSystemWatcher: (): FileSystemWatcher => ({
+        onDidChange: (listener: () => void) => {
+            watcherListeners.onDidChange.push(listener);
+
+            return {dispose: () => {}};
+        },
+        onDidCreate: (listener: () => void) => {
+            watcherListeners.onDidCreate.push(listener);
+
+            return {dispose: () => {}};
+        },
+        onDidDelete: (listener: () => void) => {
+            watcherListeners.onDidDelete.push(listener);
+
+            return {dispose: () => {}};
+        },
+        dispose: () => {},
     }),
 };
 
-export function resetVscodeMock(): void {
-    window.activeTextEditor = undefined;
-    messages.length = 0;
+export function setWorkspaceFolder(fsPath: string): void {
+    workspace.workspaceFolders = [{uri: {fsPath}}];
 }
 
-export function createDocument(text: string, languageId: string = 'php'): TextDocument {
+export function setConfig(key: string, value: unknown): void {
+    configValues[key] = value;
+}
+
+export function triggerComposerJsonChange(): void {
+    watcherListeners.onDidChange.forEach((listener) => listener());
+}
+
+export function resetVscodeMock(): void {
+    window.activeTextEditor = undefined;
+    workspace.workspaceFolders = undefined;
+    messages.length = 0;
+    Object.keys(configValues).forEach((key) => delete configValues[key]);
+    watcherListeners.onDidChange.length = 0;
+    watcherListeners.onDidCreate.length = 0;
+    watcherListeners.onDidDelete.length = 0;
+}
+
+export function createDocument(text: string, languageId: string = 'php', fileName: string = ''): TextDocument {
     return {
         languageId,
+        fileName,
         getText: (range?: Range) => {
             if (!range) {
                 return text;
@@ -73,18 +135,23 @@ export function createDocument(text: string, languageId: string = 'php'): TextDo
 
 export interface FakeEditor {
     editor: TextEditor;
-    replacement: {range: Range|null, value: string|null};
+    replacement: {location: Range|Position|null, value: string|null};
 }
 
-export function createEditor(text: string, cursorOffset: number, languageId: string = 'php'): FakeEditor {
-    const replacement: {range: Range|null, value: string|null} = {range: null, value: null};
+export interface CreateEditorOptions {
+    languageId?: string;
+    fileName?: string;
+}
+
+export function createEditor(text: string, cursorOffset: number, options: CreateEditorOptions = {}): FakeEditor {
+    const replacement: {location: Range|Position|null, value: string|null} = {location: null, value: null};
     const editor: TextEditor = {
-        document: createDocument(text, languageId),
+        document: createDocument(text, options.languageId ?? 'php', options.fileName ?? ''),
         selection: {active: new Position(0, cursorOffset)},
         edit: (callback) => {
             callback({
-                replace: (range: Range, value: string) => {
-                    replacement.range = range;
+                replace: (location: Range|Position, value: string) => {
+                    replacement.location = location;
                     replacement.value = value;
                 },
             });
