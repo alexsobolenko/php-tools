@@ -112,4 +112,24 @@ describe('Property', () => {
         assert.strictEqual(property.type, null);
         assert.ok(property.error);
     });
+
+    it('builds getter/setter names, using an "is" prefix for boolean properties', () => {
+        const source = [
+            '<?php',
+            'class User',
+            '{',
+            '    private string $name;',
+            '    private bool $active;',
+            '}',
+        ].join('\n');
+        const document = createDocument(source);
+
+        const name = resolveProperty(document, positionOf(document, '$name'));
+        const active = resolveProperty(document, positionOf(document, '$active'));
+
+        assert.strictEqual(name.getFunction(PROP.GETTER), 'getName');
+        assert.strictEqual(name.getFunction(PROP.SETTER), 'setName');
+        assert.strictEqual(active.getFunction(PROP.GETTER), 'isActive');
+        assert.strictEqual(active.getFunction(PROP.SETTER), 'setActive');
+    });
 });

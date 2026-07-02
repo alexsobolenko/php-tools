@@ -1,16 +1,55 @@
-import {commands, ExtensionContext} from 'vscode';
+import {commands, ExtensionContext, window} from 'vscode';
+import Accessor from './feature/accessor';
 import Constructor from './feature/constructor';
 import Fabric from './feature/fabric';
 import StringConvertor from './feature/string-convertor';
 import {watchComposerJson} from './service/project';
-import {COMMAND, CONV, FABRIC} from './constants';
+import {COMMAND, CONV, FABRIC, PROP} from './constants';
 
 export async function activate(context: ExtensionContext) {
+    /* getters-setters */
+    context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_GETTER, () => {
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return;
+        }
+
+        new Accessor([editor.selection.active]).render([PROP.GETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_SETTER, () => {
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return;
+        }
+
+        new Accessor([editor.selection.active]).render([PROP.SETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_GETTER_SETTER, () => {
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return;
+        }
+
+        new Accessor([editor.selection.active]).render([PROP.GETTER, PROP.SETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_GETTER_MASTER, async () => {
+        const positions = await Accessor.selectProperties('Select properties to generate getters');
+        new Accessor(positions).render([PROP.GETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_SETTER_MASTER, async () => {
+        const positions = await Accessor.selectProperties('Select properties to generate setters');
+        new Accessor(positions).render([PROP.SETTER]);
+    }));
+    context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_GETTER_SETTER_MASTER, async () => {
+        const positions = await Accessor.selectProperties('Select properties to generate getters and setters');
+        new Accessor(positions).render([PROP.GETTER, PROP.SETTER]);
+    }));
+
     /* constructor */
     context.subscriptions.push(commands.registerCommand(COMMAND.GENERATE_CONSTRUCTOR, async () => {
-        const construct = new Constructor();
-        if (await construct.fill()) {
-            construct.render();
+        const constructor = new Constructor();
+        if (await constructor.fill()) {
+            constructor.render();
         }
     }));
 
@@ -37,16 +76,13 @@ export async function activate(context: ExtensionContext) {
 
     /* string conversions */
     context.subscriptions.push(commands.registerCommand(COMMAND.CONVERT_STRING_TO_CONCATENATION, () => {
-        const convertor = new StringConvertor(CONV.CONCATENATION);
-        convertor.render();
+        new StringConvertor(CONV.CONCATENATION).render();
     }));
     context.subscriptions.push(commands.registerCommand(COMMAND.CONVERT_STRING_TO_SPRINTF, () => {
-        const convertor = new StringConvertor(CONV.SPRINTF);
-        convertor.render();
+        new StringConvertor(CONV.SPRINTF).render();
     }));
     context.subscriptions.push(commands.registerCommand(COMMAND.CONVERT_STRING_TO_INTERPOLATION, () => {
-        const convertor = new StringConvertor(CONV.INTERPOLATION);
-        convertor.render();
+        new StringConvertor(CONV.INTERPOLATION).render();
     }));
 }
 

@@ -213,4 +213,20 @@ export default class Property {
 
         return typeName ? [typeName] : [];
     }
+
+    public getFunction(type: string): string {
+        const isBoolHint = ['bool', 'boolean'].includes(this.hint ?? '');
+        const prefix = type === PROP.SETTER ? 'set' : (isBoolHint ? 'is' : 'get');
+
+        return prefix + this.capitalizeFirstCharTrimmed(this.name);
+    }
+
+    private capitalizeFirstCharTrimmed(input: string): string {
+        const trimmedInput = input.trim();
+        if (!trimmedInput) {
+            return trimmedInput;
+        }
+
+        return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
+    }
 }
