@@ -25,6 +25,7 @@ export interface TextDocument {
 
 export interface TextEditorEdit {
     replace(location: Range|Position, value: string): void;
+    insert(location: Position, value: string): void;
 }
 
 export interface TextEditor {
@@ -67,6 +68,7 @@ const watcherListeners: WatcherListeners = {
 export const window = {
     activeTextEditor: undefined as TextEditor|undefined,
     quickPickResult: undefined as Array<string>|undefined,
+    lastQuickPickItems: undefined as Array<string>|undefined,
     showInformationMessage: (text: string) => {
         messages.push({text, type: 'info'});
     },
@@ -76,7 +78,11 @@ export const window = {
     showErrorMessage: (text: string) => {
         messages.push({text, type: 'error'});
     },
-    showQuickPick: async (_items: Array<string>, _options?: unknown) => window.quickPickResult,
+    showQuickPick: async (items: Array<string>, _options?: unknown) => {
+        window.lastQuickPickItems = items;
+
+        return window.quickPickResult;
+    },
 };
 
 export function setQuickPickResult(items: Array<string>|undefined): void {
@@ -123,6 +129,7 @@ export function triggerComposerJsonChange(): void {
 export function resetVscodeMock(): void {
     window.activeTextEditor = undefined;
     window.quickPickResult = undefined;
+    window.lastQuickPickItems = undefined;
     workspace.workspaceFolders = undefined;
     messages.length = 0;
     Object.keys(configValues).forEach((key) => delete configValues[key]);
@@ -180,9 +187,16 @@ export function createDocument(text: string, languageId: string = 'php', fileNam
     };
 }
 
+export interface RecordedEdit {
+    type: 'replace'|'insert';
+    location: Range|Position;
+    value: string;
+}
+
 export interface FakeEditor {
     editor: TextEditor;
     replacement: {location: Range|Position|null, value: string|null};
+    edits: Array<RecordedEdit>;
 }
 
 export interface CreateEditorOptions {
@@ -192,20 +206,24 @@ export interface CreateEditorOptions {
 
 export function createEditor(text: string, cursorOffset: number, options: CreateEditorOptions = {}): FakeEditor {
     const replacement: {location: Range|Position|null, value: string|null} = {location: null, value: null};
+    const edits: Array<RecordedEdit> = [];
+    const record = (type: 'replace'|'insert', location: Range|Position, value: string) => {
+        replacement.location = location;
+        replacement.value = value;
+        edits.push({type, location, value});
+    };
     const editor: TextEditor = {
         document: createDocument(text, options.languageId ?? 'php', options.fileName ?? ''),
         selection: {active: new Position(0, cursorOffset)},
         edit: (callback) => {
             callback({
-                replace: (location: Range|Position, value: string) => {
-                    replacement.location = location;
-                    replacement.value = value;
-                },
+                replace: (location: Range|Position, value: string) => record('replace', location, value),
+                insert: (location: Position, value: string) => record('insert', location, value),
             });
         },
     };
 
-    return {editor, replacement};
+    return {editor, replacement, edits};
 }
 
 const originalResolveFilename = (Module as any)._resolveFilename;

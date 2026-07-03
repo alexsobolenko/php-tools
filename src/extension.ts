@@ -1,12 +1,27 @@
 import {commands, ExtensionContext, window} from 'vscode';
 import Accessor from './feature/accessor';
 import Constructor from './feature/constructor';
+import Documenter from './feature/documenter';
 import Fabric from './feature/fabric';
 import StringConvertor from './feature/string-convertor';
 import {watchComposerJson} from './service/project';
 import {COMMAND, CONV, FABRIC, PROP} from './constants';
 
 export async function activate(context: ExtensionContext) {
+    /* phpdoc */
+    context.subscriptions.push(commands.registerCommand(COMMAND.GENERATE_PHPDOC, () => {
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return;
+        }
+
+        new Documenter([editor.selection.active]).render();
+    }));
+    context.subscriptions.push(commands.registerCommand(COMMAND.GENERATE_PHPDOC_MASTER, async () => {
+        const positions = await Documenter.selectBlocks('Select blocks to generate phpdocs');
+        new Documenter(positions).render();
+    }));
+
     /* getters-setters */
     context.subscriptions.push(commands.registerCommand(COMMAND.INSERT_GETTER, () => {
         const editor = window.activeTextEditor;

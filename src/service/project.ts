@@ -3,7 +3,7 @@ import path from 'path';
 import {Disposable, workspace} from 'vscode';
 
 interface ComposerAutoload {
-    [namespace: string]: string;
+    [namespace: string]: string|Array<string>;
 }
 
 interface ProjectCache {
@@ -79,4 +79,28 @@ export function pathToNamespace(fullPath: string): string {
     });
 
     return result;
+}
+
+export function fqcnToPath(fqcn: string): string|null {
+    const {workspacePath: root, autoload} = getCache();
+    if (!root) {
+        return null;
+    }
+
+    for (const [prefix, paths] of Object.entries(autoload)) {
+        if (!fqcn.startsWith(prefix)) {
+            continue;
+        }
+
+        const relativePath = `${fqcn.slice(prefix.length).replace(/\\/g, '/')}.php`;
+        const searchPaths = Array.isArray(paths) ? paths : [paths];
+        for (const basePath of searchPaths) {
+            const fullPath = path.join(root, basePath, relativePath);
+            if (fs.existsSync(fullPath)) {
+                return fullPath;
+            }
+        }
+    }
+
+    return null;
 }
