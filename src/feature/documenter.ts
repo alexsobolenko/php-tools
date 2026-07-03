@@ -1,25 +1,21 @@
 import {Position, Range, TextDocument, TextEditorEdit, window} from 'vscode';
 import Feature from '../feature';
-import {MESSAGE, PHPDOC} from '../constants';
-import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from '../service/doc-block';
+import {
+    DOC_CONST_DESCR,
+    DOC_LINES_AFTER_DESCR,
+    DOC_LINES_BEFORE_RETURN,
+    DOC_LINES_BEFORE_THROWS,
+    DOC_PROPERTY_DESCR,
+    DOC_RETURN_VOID,
+    DOC_SHOW_DESCR,
+    DOC_SHOW_THROWS_ON_DIFF_LINES,
+    MESSAGE,
+    PHPDOC,
+} from '../constants';
+import {IImportInsert, IImportState} from '../interfaces';
+import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from '../model/doc-block';
 
 const D_REGEX_VARIABLE = /^\s*(\$\w+)\s*=/u;
-
-interface IImportState {
-    imports: Set<string>;
-    aliases: Set<string>;
-    useLines: Array<string>;
-    firstUseLine: number;
-    namespaceName: string|null;
-    lastUseLine: number;
-    namespaceLine: number;
-}
-
-interface IImportInsert {
-    position: Position;
-    text: string;
-    replaceUntilLine?: number;
-}
 
 export default class Documenter extends Feature {
     private blocks: Array<Block> = [];
@@ -42,7 +38,7 @@ export default class Documenter extends Feature {
             }
         });
 
-        if (this.blocks.length < 1) {
+        if (positions.length > 0 && this.blocks.length < 1) {
             this.showMessage('Phpdoc already exists', MESSAGE.INFO);
         }
     }
@@ -62,19 +58,19 @@ export default class Documenter extends Feature {
         });
 
         const data: Array<{startLine: number, template: string}> = [];
-        this.blocks.forEach((b) => {
-            if (b.error) {
-                this.showMessage(`${b.error} - in block ${b.name}`, MESSAGE.ERROR);
+        this.blocks.forEach((block) => {
+            if (block.error) {
+                this.showMessage(`${block.error} - in block ${block.name}`, MESSAGE.ERROR);
             }
 
             try {
-                const {template} = b;
+                const {template} = block;
                 if (template === '') {
                     throw new Error('Missing template to render');
                 }
-                data.push({startLine: b.startLine, template});
+                data.push({startLine: block.startLine, template});
             } catch (error) {
-                this.showMessage(`${(error as Error).message} - in block ${b.name}`, MESSAGE.ERROR);
+                this.showMessage(`${(error as Error).message} - in block ${block.name}`, MESSAGE.ERROR);
             }
         });
 
@@ -108,8 +104,13 @@ export default class Documenter extends Feature {
 
         const {document} = editor;
         const positions: Array<{name: string, position: Position}> = [];
+        let parenDepth = 0;
         for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
             const lineText = document.lineAt(lineNumber).text;
+            // A promoted constructor parameter (`private int $x` inside `__construct(...)`) reads
+            // identically to a property declaration on its own line - skip it here so it isn't
+            // offered as a separate "Property" entry; the constructor already documents it.
+            const insideParameterList = parenDepth > 0;
             let charNumber = null;
             let name = null;
             let matches = null;
@@ -129,7 +130,7 @@ export default class Documenter extends Feature {
                 type = 'Constant';
             }
 
-            matches = PHPDOC.PROPERTY.REGEX.exec(lineText) as Array<string>|null;
+            matches = insideParameterList ? null : PHPDOC.PROPERTY.REGEX.exec(lineText) as Array<string>|null;
             if (matches !== null) {
                 charNumber = 5;
                 name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
@@ -155,6 +156,14 @@ export default class Documenter extends Feature {
                     name: `${positions.length + 1}. ${name} (${type})`,
                     position: new Position(lineNumber, charNumber),
                 });
+            }
+
+            for (const char of lineText) {
+                if (char === '(') {
+                    parenDepth++;
+                } else if (char === ')') {
+                    parenDepth = Math.max(0, parenDepth - 1);
+                }
             }
         }
 
@@ -188,15 +197,28 @@ export default class Documenter extends Feature {
         }
 
         if (text.match(PHPDOC.PROPERTY.REGEX)) {
-            return new PropertyBlock(document, position);
+            return new PropertyBlock(document, position, {
+                showDescription: this.getConfig(DOC_PROPERTY_DESCR, false),
+                linesAfterDescription: this.getConfig(DOC_LINES_AFTER_DESCR, 0),
+            });
         }
 
         if (text.match(PHPDOC.CONSTANT.REGEX)) {
-            return new ConstantBlock(document, position);
+            return new ConstantBlock(document, position, {
+                showDescription: this.getConfig(DOC_CONST_DESCR, false),
+                linesAfterDescription: this.getConfig(DOC_LINES_AFTER_DESCR, 0),
+            });
         }
 
         if (text.match(PHPDOC.FUNCTION.REGEX)) {
-            return new FunctionBlock(document, position);
+            return new FunctionBlock(document, position, {
+                showDescription: this.getConfig(DOC_SHOW_DESCR, false),
+                linesAfterDescription: this.getConfig(DOC_LINES_AFTER_DESCR, 0),
+                returnVoid: this.getConfig(DOC_RETURN_VOID, false),
+                linesBeforeReturn: this.getConfig(DOC_LINES_BEFORE_RETURN, 0),
+                linesBeforeThrows: this.getConfig(DOC_LINES_BEFORE_THROWS, 0),
+                showThrowsOnDiffLines: this.getConfig(DOC_SHOW_THROWS_ON_DIFF_LINES, true),
+            });
         }
 
         if (text.match(D_REGEX_VARIABLE)) {
@@ -253,6 +275,7 @@ export default class Documenter extends Feature {
             if (firstUseLine === -1) {
                 firstUseLine = lineNumber;
             }
+
             lastUseLine = lineNumber;
             useLines.push(lineText);
             const parts = (useMatch[1] as string).split(/\s+as\s+/iu);

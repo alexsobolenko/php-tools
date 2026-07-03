@@ -1,7 +1,7 @@
 import {createDocument} from '../helpers/vscode';
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
-import Property from '../../service/property';
+import Property from '../../model/property';
 import {PROP} from '../../constants';
 
 function positionOf(document: {getText(): string}, needle: string): {line: number, character: number} {

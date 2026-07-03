@@ -8,8 +8,11 @@ import Fabric from '../../feature/fabric';
 import {FAB_GENERATE_PHPDOC, FAB_STRICT_TYPES, FABRIC} from '../../constants';
 import {resetProjectCache} from '../../service/project';
 
+const createdDirs: Array<string> = [];
+
 function useProject(composer: object): string {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'php-tools-fabric-'));
+    createdDirs.push(root);
     fs.writeFileSync(path.join(root, 'composer.json'), JSON.stringify(composer));
     setWorkspaceFolder(root);
 
@@ -20,6 +23,7 @@ describe('Fabric', () => {
     afterEach(() => {
         resetVscodeMock();
         resetProjectCache();
+        createdDirs.splice(0).forEach((dir) => fs.rmSync(dir, {recursive: true, force: true}));
     });
 
     it('generates a class with strict types by default', () => {
@@ -85,15 +89,14 @@ describe('Fabric', () => {
         });
     });
 
-    it('shows a warning when there is no active PHP editor', () => {
+    it('does nothing when there is no active PHP editor', () => {
         const {editor, replacement} = createEditor('', 0, {languageId: 'plaintext'});
         window.activeTextEditor = editor;
 
         new Fabric(FABRIC.CLASS).render();
 
         assert.strictEqual(replacement.value, null);
-        assert.strictEqual(messages.length, 1);
-        assert.strictEqual(messages[0].type, 'warning');
+        assert.strictEqual(messages.length, 0);
     });
 
     it('shows an error when the fabric type is unknown', () => {

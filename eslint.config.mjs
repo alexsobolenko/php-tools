@@ -15,6 +15,7 @@ export default [{
         sourceType: 'module',
     },
     rules: {
+        '@typescript-eslint/no-unused-vars': ['error', {argsIgnorePattern: '^_'}],
         '@typescript-eslint/naming-convention': ['warn', {
             selector: 'import',
             format: [

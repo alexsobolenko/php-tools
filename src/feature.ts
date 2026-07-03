@@ -1,5 +1,6 @@
 import {TextEditor, window, workspace} from 'vscode';
 import {EXT_ID, MESSAGE} from './constants';
+import {arrayToPhpdoc, capitalizeFirstCharTrimmed} from './service/text';
 
 export default abstract class Feature {
     protected getConfig<T>(key: string, defaultValue: T): T {
@@ -32,19 +33,10 @@ export default abstract class Feature {
     }
 
     protected capitalizeFirstCharTrimmed(input: string): string {
-        const trimmedInput = input.trim();
-        if (!trimmedInput) {
-            return trimmedInput;
-        }
-
-        return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
+        return capitalizeFirstCharTrimmed(input);
     }
 
     protected arrayToPhpdoc(data: Array<string>, tab: string = ''): string {
-        const res: Array<string> = data.map((v) => `${tab} * ${v}`);
-        res.unshift(`${tab}/**`);
-        res.push(`${tab} */`);
-
-        return `${res.join('\n')}\n`;
+        return arrayToPhpdoc(data, tab);
     }
 }

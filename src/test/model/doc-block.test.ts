@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {Position} from 'vscode';
 import {afterEach, describe, it} from 'node:test';
-import {ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from '../../service/doc-block';
+import {ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from '../../model/doc-block';
 import {resetProjectCache} from '../../service/project';
 
 function positionOf(source: string, needle: string): Position {
@@ -20,9 +20,22 @@ function documentOf(source: string) {
     return createDocument(source) as unknown as import('vscode').TextDocument;
 }
 
+const defaultDescriptionConfig = {showDescription: false, linesAfterDescription: 0};
+const defaultFunctionDocConfig = {
+    showDescription: false,
+    linesAfterDescription: 0,
+    returnVoid: false,
+    linesBeforeReturn: 0,
+    linesBeforeThrows: 0,
+    showThrowsOnDiffLines: true,
+};
+
+const createdDirs: Array<string> = [];
+
 describe('doc-block', () => {
     afterEach(() => {
         resetProjectCache();
+        createdDirs.splice(0).forEach((dir) => fs.rmSync(dir, {recursive: true, force: true}));
     });
 
     describe('ClassBlock', () => {
@@ -49,7 +62,7 @@ describe('doc-block', () => {
         it('detects an explicitly typed constant (PHP 8.3 syntax)', () => {
             const source = '<?php\nclass Foo\n{\n    const int MAX = 10;\n}\n';
             const document = documentOf(source);
-            const block = new ConstantBlock(document, positionOf(source, 'const int MAX'));
+            const block = new ConstantBlock(document, positionOf(source, 'const int MAX'), defaultDescriptionConfig);
 
             assert.strictEqual(block.template, '    /**\n     * @var int\n     */\n');
         });
@@ -57,7 +70,7 @@ describe('doc-block', () => {
         it('falls back to mixed for an untyped constant', () => {
             const source = '<?php\nclass Foo\n{\n    const MAX = 10;\n}\n';
             const document = documentOf(source);
-            const block = new ConstantBlock(document, positionOf(source, 'const MAX'));
+            const block = new ConstantBlock(document, positionOf(source, 'const MAX'), defaultDescriptionConfig);
 
             assert.strictEqual(block.template, '    /**\n     * @var mixed\n     */\n');
         });
@@ -67,7 +80,7 @@ describe('doc-block', () => {
         it('resolves the property type via the shared Property service', () => {
             const source = '<?php\nclass Foo\n{\n    private ?string $name;\n}\n';
             const document = documentOf(source);
-            const block = new PropertyBlock(document, positionOf(source, '$name'));
+            const block = new PropertyBlock(document, positionOf(source, '$name'), defaultDescriptionConfig);
 
             assert.strictEqual(block.template, '    /**\n     * @var string|null\n     */\n');
         });
@@ -85,7 +98,7 @@ describe('doc-block', () => {
                 '',
             ].join('\n');
             const document = documentOf(source);
-            const block = new PropertyBlock(document, positionOf(source, '$id'));
+            const block = new PropertyBlock(document, positionOf(source, '$id'), defaultDescriptionConfig);
 
             assert.strictEqual(block.varHint, 'int');
         });
@@ -123,7 +136,8 @@ describe('doc-block', () => {
                 '',
             ].join('\n');
             const document = documentOf(source);
-            const block = new FunctionBlock(document, positionOf(source, 'public function bar'));
+            const position = positionOf(source, 'public function bar');
+            const block = new FunctionBlock(document, position, defaultFunctionDocConfig);
 
             assert.strictEqual(block.template, '    /**\n     * @param string $name\n     * @return int\n     */\n');
         });
@@ -141,7 +155,8 @@ describe('doc-block', () => {
                 '',
             ].join('\n');
             const document = documentOf(source);
-            const block = new FunctionBlock(document, positionOf(source, 'public function bar'));
+            const position = positionOf(source, 'public function bar');
+            const block = new FunctionBlock(document, position, defaultFunctionDocConfig);
 
             assert.deepStrictEqual(block.throws, ['\\RuntimeException']);
         });
@@ -162,13 +177,15 @@ describe('doc-block', () => {
                 '',
             ].join('\n');
             const document = documentOf(source);
-            const block = new FunctionBlock(document, positionOf(source, 'public function bar'));
+            const position = positionOf(source, 'public function bar');
+            const block = new FunctionBlock(document, position, defaultFunctionDocConfig);
 
             assert.deepStrictEqual(block.throws, []);
         });
 
         it('follows a call into another file resolved through the PSR-4 autoload map', () => {
             const root = fs.mkdtempSync(path.join(os.tmpdir(), 'php-tools-docblock-'));
+            createdDirs.push(root);
             const composer = {autoload: {'psr-4': {'App\\': 'src/'}}};
             fs.writeFileSync(path.join(root, 'composer.json'), JSON.stringify(composer));
             fs.mkdirSync(path.join(root, 'src'), {recursive: true});
@@ -206,7 +223,8 @@ describe('doc-block', () => {
                 '',
             ].join('\n');
             const document = documentOf(source);
-            const block = new FunctionBlock(document, positionOf(source, 'public function run'));
+            const position = positionOf(source, 'public function run');
+            const block = new FunctionBlock(document, position, defaultFunctionDocConfig);
 
             assert.deepStrictEqual(block.throws, ['\\RuntimeException']);
         });

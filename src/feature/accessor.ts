@@ -9,8 +9,8 @@ import {
     MESSAGE,
     PROP,
 } from '../constants';
+import Property from '../model/property';
 import {nodeName, parsePhp, walkPhp} from '../service/php-ast';
-import Property from '../service/property';
 
 export default class Accessor extends Feature {
     private properties: Array<Property>;
@@ -23,7 +23,6 @@ export default class Accessor extends Feature {
 
     public static async selectProperties(placeHolder: string): Promise<Array<Position>> {
         const positions = this.collectProperties();
-
         const selectedProps = await window.showQuickPick(positions.map((p) => p.name), {
             canPickMany: true,
             placeHolder,
@@ -46,10 +45,9 @@ export default class Accessor extends Feature {
             return positions;
         }
 
-        const {document} = editor;
-        const seen = new Set<string>();
-
         try {
+            const {document} = editor;
+            const seen = new Set<string>();
             const program = parsePhp(document.getText());
             walkPhp(program, (node, parent) => {
                 if (node.kind === 'property') {
@@ -107,7 +105,6 @@ export default class Accessor extends Feature {
         }
 
         const fcnName = property.getFunction(PROP.GETTER);
-
         const generatePhpdoc = !!this.getConfig(GS_GENERATE_PHPDOC, true);
         let phpdoc = '';
         if (generatePhpdoc) {
@@ -137,11 +134,9 @@ export default class Accessor extends Feature {
         }
 
         const fcnName = property.getFunction(PROP.SETTER);
-
         const returnSelf = !!this.getConfig(GS_RETURN_SELF, false);
         const returnType = returnSelf ? property.className : 'void';
         const returnInstructions = returnSelf ? `\n${property.tab}${property.tab}return $this;\n` : '';
-
         const generatePhpdoc = !!this.getConfig(GS_GENERATE_PHPDOC, true);
         let phpdoc = '';
         if (generatePhpdoc) {

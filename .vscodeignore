@@ -11,3 +11,5 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 .github/**
+.gitlab-ci.yml
+.woodpecker.yml

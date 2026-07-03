@@ -58,6 +58,25 @@ describe('Documenter', () => {
         assert.strictEqual(messages[0].type, 'info');
     });
 
+    it('shows no message when the master flow is confirmed with nothing selected', () => {
+        const source = [
+            '<?php',
+            'class User',
+            '{',
+            '    private string $name;',
+            '}',
+            '',
+        ].join('\n');
+        const {editor, edits} = createEditor(source, 0);
+        window.activeTextEditor = editor;
+
+        const documenter = new Documenter([]);
+        documenter.render();
+
+        assert.strictEqual(edits.length, 0);
+        assert.strictEqual(messages.length, 0);
+    });
+
     it('lets the user pick multiple declarations via the master flow', async () => {
         const source = [
             '<?php',
@@ -118,5 +137,33 @@ describe('Documenter', () => {
 
         const replace = edits.find((edit) => edit.type === 'replace');
         assert.ok(replace?.value.includes('@throws NotFoundException'));
+    });
+
+    it('does not offer a promoted constructor parameter as a separate Property entry', async () => {
+        const source = [
+            '<?php',
+            '',
+            'declare(strict_types=1);',
+            '',
+            'namespace App\\Repository;',
+            '',
+            'class Test',
+            '{',
+            '    public function __construct(',
+            '        private int $x',
+            '    ) {}',
+            '}',
+            '',
+        ].join('\n');
+        const {editor} = createEditor(source, 0);
+        window.activeTextEditor = editor;
+
+        await Documenter.selectBlocks('Select blocks');
+        const labels = window.lastQuickPickItems ?? [];
+
+        assert.strictEqual(labels.length, 2);
+        assert.ok(labels.some((label) => label.includes('(Class)')));
+        assert.ok(labels.some((label) => label.includes('(Function)')));
+        assert.ok(!labels.some((label) => label.includes('(Property)')));
     });
 });

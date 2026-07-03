@@ -1,7 +1,8 @@
-import {Position, Range, TextDocument, TextEditor, TextEditorEdit} from 'vscode';
+import {Position, Range, TextDocument, TextEditorEdit} from 'vscode';
 import Feature from '../feature';
 import {CONV, MESSAGE} from '../constants';
-import {IPhpNode, nodeName, tryParsePhp, walkPhp} from '../service/php-ast';
+import {IPhpNode} from '../interfaces';
+import {nodeName, tryParsePhp, walkPhp} from '../service/php-ast';
 
 export default class StringConvertor extends Feature {
     public target: string;

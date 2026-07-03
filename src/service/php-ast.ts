@@ -1,20 +1,5 @@
 import {Engine, Program} from 'php-parser';
-
-export interface IPhpNode {
-    kind?: string;
-    name?: any;
-    loc?: {
-        start?: {
-            line?: number;
-            offset?: number;
-        };
-        end?: {
-            line?: number;
-            offset?: number;
-        };
-    };
-    [key: string]: any;
-}
+import {IPhpNode} from '../interfaces';
 
 let parser: Engine | null = null;
 
@@ -36,7 +21,7 @@ export function parsePhp(buffer: string): Program {
 export function tryParsePhp(buffer: string): Program | null {
     try {
         return parsePhp(buffer);
-    } catch (error) {
+    } catch {
         return null;
     }
 }

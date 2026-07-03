@@ -1,44 +1,26 @@
 import fs from 'fs';
-import {Position, TextDocument, TextLine, workspace} from 'vscode';
-import {Name, Parameter} from 'php-parser';
+import {Position, TextDocument, TextLine} from 'vscode';
 import {
-    DOC_CONST_DESCR,
-    DOC_LINES_AFTER_DESCR,
-    DOC_LINES_BEFORE_RETURN,
-    DOC_LINES_BEFORE_THROWS,
-    DOC_PROPERTY_DESCR,
-    DOC_RETURN_VOID,
-    DOC_SHOW_DESCR,
-    DOC_SHOW_THROWS_ON_DIFF_LINES,
-    EXT_ID,
-    PHPDOC,
-    PROP,
-} from '../constants';
-import {IParameter} from '../interfaces';
-import {collectUseStatements, nodeName, parsePhp, walkPhp} from './php-ast';
-import {fqcnToPath} from './project';
+    Assign,
+    Catch,
+    Class,
+    ClassConstant,
+    Declaration,
+    ExpressionStatement,
+    Function as PhpFunction,
+    Identifier,
+    Name,
+    Parameter,
+    Program,
+    Variable,
+} from 'php-parser';
+import {PHPDOC, PROP} from '../constants';
+import {IDescriptionConfig, IFunctionDocConfig, IParameter, IPhpNode} from '../interfaces';
+import {TCallable, TRelations, TResolvedCallable, TThrowsContext} from '../types';
+import {collectUseStatements, nodeName, parsePhp, walkPhp} from '../service/php-ast';
+import {fqcnToPath} from '../service/project';
+import {arrayToPhpdoc, capitalizeFirstCharTrimmed} from '../service/text';
 import Property from './property';
-
-function getConfig<T>(key: string, defaultValue: T): T {
-    return workspace.getConfiguration(EXT_ID).get<T>(key, defaultValue);
-}
-
-function capitalizeFirstCharTrimmed(input: string): string {
-    const trimmedInput = input.trim();
-    if (!trimmedInput) {
-        return trimmedInput;
-    }
-
-    return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
-}
-
-function arrayToPhpdoc(data: Array<string>, tab: string = ''): string {
-    const res: Array<string> = data.map((v) => `${tab} * ${v}`);
-    res.unshift(`${tab}/**`);
-    res.push(`${tab} */`);
-
-    return `${res.join('\n')}\n`;
-}
 
 export class Block {
     public type: string;
@@ -64,7 +46,7 @@ export class Block {
         return '';
     }
 
-    protected parseCode(buffer: string) {
+    protected parseCode(buffer: string): Program {
         return parsePhp(buffer);
     }
 
@@ -104,12 +86,13 @@ export class ClassBlock extends Block {
             declr = `${declr} ${declr.includes('{') ? '}' : ' {}'}`;
             const program = this.parseCode(`<?php \n ${declr} \n`);
 
-            const klass = program.children.find((node: any) => PHPDOC.VALID_KLASS.includes(node.kind)) as any;
+            const klass = program.children.find((node) => PHPDOC.VALID_KLASS.includes(node.kind)) as
+                Declaration|undefined;
             if (typeof klass === 'undefined') {
                 throw new Error('Invalid class declaration');
             }
 
-            this.name = (klass.name as Name).name;
+            this.name = (klass.name as Identifier).name;
             this.kind = klass.kind;
         } catch (error) {
             this.error = `Failed to parse class: ${(error as Error).message}.`;
@@ -126,7 +109,7 @@ export class ClassBlock extends Block {
 export class ConstantBlock extends Block {
     public constType: string|null;
 
-    public constructor(document: TextDocument, position: Position) {
+    public constructor(document: TextDocument, position: Position, private readonly config: IDescriptionConfig) {
         super(document, position);
 
         this.type = PHPDOC.CONSTANT.TYPE;
@@ -145,26 +128,27 @@ export class ConstantBlock extends Block {
                     declr = `${declr};`;
                 }
             }
-            const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
 
-            const klass = program.children.find((node: any) => PHPDOC.VALID_KLASS.includes(node.kind)) as any;
+            const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
+            const klass = program.children.find((node) => PHPDOC.VALID_KLASS.includes(node.kind)) as Class|undefined;
             if (typeof klass === 'undefined') {
                 throw new Error('Invalid class declaration');
             }
 
-            const stmt = klass.body.find((node: any) => node.kind === 'classconstant');
+            const stmt = klass.body.find((node) => node.kind === 'classconstant') as ClassConstant|undefined;
             if (typeof stmt === 'undefined') {
                 throw new Error('Invalid constant statement declaration');
             }
 
-            const konst = stmt.constants.find((node: any) => node.kind === 'constant');
+            // Constant.name is declared as `string` in php-parser's types, but at runtime it is
+            // always an Identifier-shaped node ({kind, name}) - IPhpNode reflects that accurately.
+            const konst: IPhpNode|undefined = stmt.constants.find((node) => node.kind === 'constant');
             if (typeof konst === 'undefined') {
                 throw new Error('Invalid constant');
             }
 
-            this.name = (konst.name as Name).name;
+            this.name = konst.name.name;
             const matches = declr.match(PHPDOC.CONSTANT.REGEX) as Array<string>|null;
-
             this.constType = (matches && matches.length >= 3)
                 ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2])
                 : 'mixed';
@@ -177,9 +161,9 @@ export class ConstantBlock extends Block {
     public get template(): string {
         const data: Array<string> = [];
 
-        if (!!getConfig(DOC_CONST_DESCR, false)) {
+        if (this.config.showDescription) {
             data.push(`${this.name} description.`);
-            for (let i = 0; i < getConfig(DOC_LINES_AFTER_DESCR, 0); i++) {
+            for (let i = 0; i < this.config.linesAfterDescription; i++) {
                 data.push('');
             }
         }
@@ -203,16 +187,16 @@ export class VariableBlock extends Block {
             const line = this.activeLine.text.trim();
             const declr = line.endsWith(';') ? line : `${line};`;
             const program = this.parseCode(`<?php function demo() { ${declr} }`);
-
-            const func = program.children.find((node: any) => node.kind === 'function') as any;
+            const func = program.children.find((node) => node.kind === 'function') as PhpFunction|undefined;
             const body = func?.body?.children ?? [];
-            const exprStmt = body.find((node: any) => node.kind === 'expressionstatement') as any;
-            const assign = exprStmt?.expression;
+            const exprStmt = body.find((node) => node.kind === 'expressionstatement') as
+                ExpressionStatement|undefined;
+            const assign = exprStmt?.expression as Assign|undefined;
             if (!assign || assign.kind !== 'assign' || assign.operator !== '=') {
                 throw new Error('Invalid variable assignment');
             }
 
-            const variable = assign.left;
+            const variable = assign.left as Variable;
             if (!variable || variable.kind !== 'variable' || typeof variable.name !== 'string') {
                 throw new Error('Invalid variable declaration');
             }
@@ -229,7 +213,7 @@ export class VariableBlock extends Block {
         return `${this.tab}/** @var ${this.varHint} $${this.name} */\n`;
     }
 
-    private detectVarHint(node: any): string {
+    private detectVarHint(node: IPhpNode|null|undefined): string {
         if (!node || typeof node !== 'object') {
             return 'mixed';
         }
@@ -259,7 +243,7 @@ export class VariableBlock extends Block {
 export class PropertyBlock extends Block {
     public varHint: string = 'mixed';
 
-    public constructor(document: TextDocument, position: Position) {
+    public constructor(document: TextDocument, position: Position, private readonly config: IDescriptionConfig) {
         super(document, position);
 
         this.type = PHPDOC.PROPERTY.TYPE;
@@ -272,15 +256,15 @@ export class PropertyBlock extends Block {
         if (property.name !== PROP.UNDEFINED) {
             this.name = property.name;
         }
+
         this.varHint = property.hint ?? 'mixed';
     }
 
     public get template(): string {
         const data: Array<string> = [];
-
-        if (!!getConfig(DOC_PROPERTY_DESCR, false)) {
+        if (this.config.showDescription) {
             data.push(`${this.name} description.`);
-            for (let i = 0; i < getConfig(DOC_LINES_AFTER_DESCR, 0); i++) {
+            for (let i = 0; i < this.config.linesAfterDescription; i++) {
                 data.push('');
             }
         }
@@ -291,18 +275,6 @@ export class PropertyBlock extends Block {
     }
 }
 
-type TRelations = Map<string, {extends: string|null, implements: Array<string>}>;
-type TThrowsContext = {
-    functionMap: Map<string, any>,
-    methodMap: Map<string, any>,
-    ownerClass: any|null,
-    currentClassName: string|null,
-    namespaceName: string|null,
-    relations: TRelations,
-    uses: Map<string, string>,
-};
-type TCallable = {node: any, ownerClass: any|null};
-type TResolvedCallable = {node: any, className: string|null, context: TThrowsContext};
 
 export class FunctionBlock extends Block {
     public params: Array<IParameter>;
@@ -310,7 +282,7 @@ export class FunctionBlock extends Block {
     public throws: Array<string>;
     public renderedThrows: Array<string>;
 
-    public constructor(document: TextDocument, position: Position) {
+    public constructor(document: TextDocument, position: Position, private readonly config: IFunctionDocConfig) {
         super(document, position);
 
         this.type = PHPDOC.FUNCTION.TYPE;
@@ -319,12 +291,11 @@ export class FunctionBlock extends Block {
         this.renderedThrows = [];
         this.returnHint = '';
 
-        const code = document.getText();
-
         try {
+            const code = document.getText();
             const funcDeclr = document.lineAt(this.startLine).text.trim();
-            const matches = funcDeclr.match(PHPDOC.FUNCTION.REGEX) as Array<any>;
-            if (!matches[1]) {
+            const matches = funcDeclr.match(PHPDOC.FUNCTION.REGEX);
+            if (!matches || !matches[1]) {
                 throw new Error('Function name not found');
             }
 
@@ -352,38 +323,31 @@ export class FunctionBlock extends Block {
 
             const methodMap = callable.ownerClass
                 ? this.collectClassMethods(callable.ownerClass)
-                : new Map<string, any>();
+                : new Map<string, IPhpNode>();
             const functionMap = this.collectFunctions(ast);
             const relations = this.collectClassRelations(ast, namespaceName, uses);
-            this.throws = Array.from(this.collectThrows(
-                callable.node.body,
-                {
-                    functionMap,
-                    methodMap,
-                    ownerClass: callable.ownerClass,
-                    currentClassName: callable.ownerClass
-                        ? this.resolveTypeName(callable.ownerClass.name, namespaceName, uses)
-                        : null,
-                    namespaceName,
-                    relations,
-                    uses,
-                },
-                new Set<string>(),
-                [],
-            ));
+            const context = {
+                functionMap,
+                methodMap,
+                ownerClass: callable.ownerClass,
+                currentClassName: callable.ownerClass
+                    ? this.resolveTypeName(callable.ownerClass.name, namespaceName, uses)
+                    : null,
+                namespaceName,
+                relations,
+                uses,
+            };
+            this.throws = Array.from(this.collectThrows(callable.node.body, context, new Set<string>(), []));
             this.renderedThrows = [...this.throws];
 
             if (this.name === '__construct') {
                 this.returnHint = 'void';
             } else {
-                const funcType = callable.node.type as any;
-                const types = funcType
-                    ? (
-                        callable.node.type.kind === 'uniontype'
-                            ? funcType.types.map((t: Name) => t.name)
-                            : [funcType.name]
-                    )
-                    : ['mixed'];
+                const funcType = callable.node.type;
+                const typeFromFunc = callable.node.type.kind === 'uniontype'
+                    ? funcType.types.map((t: Name) => t.name)
+                    : [funcType.name];
+                const types = funcType ? typeFromFunc : ['mixed'];
                 if (callable.node.nullable && !types.includes('void') && !types.includes('null')) {
                     types.push('null');
                 }
@@ -398,10 +362,9 @@ export class FunctionBlock extends Block {
 
     public get template(): string {
         const data = [];
-
-        if (!!getConfig(DOC_SHOW_DESCR, false)) {
+        if (this.config.showDescription) {
             data.push(`${this.name} description.`);
-            for (let i = 0; i < getConfig(DOC_LINES_AFTER_DESCR, 0); i++) {
+            for (let i = 0; i < this.config.linesAfterDescription; i++) {
                 data.push('');
             }
         }
@@ -410,10 +373,10 @@ export class FunctionBlock extends Block {
             data.push(`@param ${p.hint} $${p.name}`);
         });
 
-        const returnVoid = !!getConfig(DOC_RETURN_VOID, false);
+        const {returnVoid} = this.config;
         const emptyLinesBeforeReturn = (!returnVoid && this.returnHint === 'void')
             ? 0
-            : getConfig(DOC_LINES_BEFORE_RETURN, 0);
+            : this.config.linesBeforeReturn;
         for (let i = 0; i < emptyLinesBeforeReturn; i++) {
             data.push('');
         }
@@ -422,14 +385,14 @@ export class FunctionBlock extends Block {
             data.push(`@return ${this.returnHint}`);
         }
 
-        const emptyLinesBeforeThrows = getConfig(DOC_LINES_BEFORE_THROWS, 0);
+        const emptyLinesBeforeThrows = this.config.linesBeforeThrows;
         if (this.renderedThrows.length > 0 && emptyLinesBeforeThrows > 0) {
             for (let i = 0; i < emptyLinesBeforeThrows; i++) {
                 data.push('');
             }
         }
 
-        const showThrowsOnDiffLines = !!getConfig(DOC_SHOW_THROWS_ON_DIFF_LINES, true);
+        const {showThrowsOnDiffLines} = this.config;
         (showThrowsOnDiffLines ? this.renderedThrows : [this.renderedThrows.join('|')]).forEach((v: string) => {
             data.push(`@throws ${v}`);
         });
@@ -503,7 +466,7 @@ export class FunctionBlock extends Block {
         return typeName.startsWith('\\') && !typeName.slice(1).includes('\\');
     }
 
-    private extractNamespaceName(program: any): string|null {
+    private extractNamespaceName(program: Program): string|null {
         let namespace: string|null = null;
 
         walkPhp(program, (node) => {
@@ -515,7 +478,7 @@ export class FunctionBlock extends Block {
         return namespace;
     }
 
-    private findCallableAtLine(program: any, line: number): TCallable|null {
+    private findCallableAtLine(program: Program, line: number): TCallable|null {
         let result: TCallable|null = null;
 
         walkPhp(program, (node, parent) => {
@@ -550,7 +513,7 @@ export class FunctionBlock extends Block {
             const program = this.parseCode(`<?php\nclass PhpToolsPhpDocCallable\n{\n${declaration}\n{\n}\n}\n`);
 
             return this.findCallableAtLine(program, 3);
-        } catch (error) {
+        } catch {
             return null;
         }
     }
@@ -560,7 +523,6 @@ export class FunctionBlock extends Block {
         let hasArguments = false;
         let parenthesesDepth = 0;
         let finished = false;
-
         for (let lineNumber = line; lineNumber < document.lineCount && !finished; lineNumber++) {
             const lineText = document.lineAt(lineNumber).text;
             let buffer = '';
@@ -593,9 +555,9 @@ export class FunctionBlock extends Block {
         return parts.join('\n');
     }
 
-    private collectClassMethods(ownerClass: any): Map<string, any> {
-        const methods = new Map<string, any>();
-        (ownerClass?.body ?? []).forEach((node: any) => {
+    private collectClassMethods(ownerClass: IPhpNode|null): Map<string, IPhpNode> {
+        const methods = new Map<string, IPhpNode>();
+        (ownerClass?.body ?? []).forEach((node: IPhpNode) => {
             if (node.kind !== 'method') {
                 return;
             }
@@ -609,9 +571,8 @@ export class FunctionBlock extends Block {
         return methods;
     }
 
-    private collectFunctions(program: any): Map<string, any> {
-        const functions = new Map<string, any>();
-
+    private collectFunctions(program: Program): Map<string, IPhpNode> {
+        const functions = new Map<string, IPhpNode>();
         walkPhp(program, (node, parent) => {
             if (node.kind !== 'function' || parent?.kind === 'class') {
                 return;
@@ -627,12 +588,11 @@ export class FunctionBlock extends Block {
     }
 
     private collectClassRelations(
-        program: any,
+        program: Program,
         namespaceName: string|null,
         uses: Map<string, string>,
     ): TRelations {
         const relations = new Map<string, {extends: string|null, implements: Array<string>}>();
-
         walkPhp(program, (node) => {
             if (!['class', 'interface'].includes(node.kind ?? '')) {
                 return;
@@ -645,9 +605,8 @@ export class FunctionBlock extends Block {
 
             const extendsName = this.resolveTypeName(node.extends, namespaceName, uses);
             const interfaces = (node.implements ?? [])
-                .map((entry: any) => this.resolveTypeName(entry, namespaceName, uses))
+                .map((entry: IPhpNode) => this.resolveTypeName(entry, namespaceName, uses))
                 .filter((entry: string|null): entry is string => entry !== null);
-
             relations.set(className, {
                 extends: extendsName,
                 implements: interfaces,
@@ -658,13 +617,12 @@ export class FunctionBlock extends Block {
     }
 
     private collectThrows(
-        node: any,
+        node: IPhpNode|Array<IPhpNode>|null|undefined,
         context: TThrowsContext,
         visited: Set<string>,
         caughtTypes: Array<string>,
     ): Set<string> {
         const throwsSet = new Set<string>();
-
         if (Array.isArray(node)) {
             node.forEach((child) => {
                 this.collectThrows(child, context, visited, caughtTypes).forEach((item) => throwsSet.add(item));
@@ -701,7 +659,7 @@ export class FunctionBlock extends Block {
 
             this.collectThrows(current.body, context, visited, tryCaughtTypes)
                 .forEach((item) => throwsSet.add(item));
-            (current.catches ?? []).forEach((catchNode: any) => {
+            (current.catches ?? []).forEach((catchNode: IPhpNode) => {
                 this.collectThrows(catchNode.body, context, visited, caughtTypes)
                     .forEach((item) => throwsSet.add(item));
             });
@@ -723,7 +681,7 @@ export class FunctionBlock extends Block {
     }
 
     private collectThrowsFromCall(
-        callNode: any,
+        callNode: IPhpNode,
         context: TThrowsContext,
         visited: Set<string>,
         caughtTypes: Array<string>,
@@ -748,7 +706,7 @@ export class FunctionBlock extends Block {
         return throwsSet;
     }
 
-    private resolveCalledCallable(callNode: any, context: TThrowsContext): TResolvedCallable|null {
+    private resolveCalledCallable(callNode: IPhpNode, context: TThrowsContext): TResolvedCallable|null {
         const target = callNode.what;
         if (!target || typeof target !== 'object') {
             return null;
@@ -791,14 +749,14 @@ export class FunctionBlock extends Block {
     }
 
     private collectCatchTypes(
-        catches: Array<any>,
+        catches: Array<Catch>,
         namespaceName: string|null,
         uses: Map<string, string>,
     ): Array<string> {
         const types = new Set<string>();
 
         catches.forEach((catchNode) => {
-            (catchNode.what ?? []).forEach((entry: any) => {
+            (catchNode.what ?? []).forEach((entry: Name) => {
                 const resolved = this.resolveTypeName(entry, namespaceName, uses);
                 if (resolved) {
                     types.add(resolved);
@@ -809,7 +767,11 @@ export class FunctionBlock extends Block {
         return Array.from(types);
     }
 
-    private resolveThrownType(node: any, namespaceName: string|null, uses: Map<string, string>): string|null {
+    private resolveThrownType(
+        node: IPhpNode|null|undefined,
+        namespaceName: string|null,
+        uses: Map<string, string>,
+    ): string|null {
         if (!node || typeof node !== 'object') {
             return null;
         }
@@ -821,7 +783,11 @@ export class FunctionBlock extends Block {
         return this.resolveTypeName(node, namespaceName, uses);
     }
 
-    private resolveTypeName(node: any, namespaceName: string|null, uses: Map<string, string>): string|null {
+    private resolveTypeName(
+        node: IPhpNode|null|undefined,
+        namespaceName: string|null,
+        uses: Map<string, string>,
+    ): string|null {
         const rawName = nodeName(node);
         if (!rawName) {
             return null;
@@ -869,9 +835,9 @@ export class FunctionBlock extends Block {
     }
 
     private resolveCallOwnerClass(
-        node: any,
+        node: IPhpNode,
         context: {
-            ownerClass: any|null,
+            ownerClass: IPhpNode|null,
             namespaceName: string|null,
             uses: Map<string, string>,
         },
@@ -896,7 +862,7 @@ export class FunctionBlock extends Block {
     private resolveThisPropertyType(
         propertyName: string,
         context: {
-            ownerClass: any|null,
+            ownerClass: IPhpNode|null,
             namespaceName: string|null,
             uses: Map<string, string>,
         },
@@ -949,32 +915,29 @@ export class FunctionBlock extends Block {
                 return null;
             }
 
-            return {
-                node,
-                className,
-                context: {
-                    functionMap: this.collectFunctions(program),
-                    methodMap,
-                    ownerClass,
-                    currentClassName: className,
-                    namespaceName,
-                    relations: this.collectClassRelations(program, namespaceName, uses),
-                    uses,
-                },
+            const context = {
+                functionMap: this.collectFunctions(program),
+                methodMap,
+                ownerClass,
+                currentClassName: className,
+                namespaceName,
+                relations: this.collectClassRelations(program, namespaceName, uses),
+                uses,
             };
-        } catch (error) {
+
+            return {node, className, context};
+        } catch {
             return null;
         }
     }
 
     private findClassByName(
-        program: any,
+        program: Program,
         fqcn: string,
         namespaceName: string|null,
         uses: Map<string, string>,
-    ): any|null {
-        let result: any|null = null;
-
+    ): IPhpNode|null {
+        let result: IPhpNode|null = null;
         walkPhp(program, (node) => {
             if (result !== null || node.kind !== 'class') {
                 return;

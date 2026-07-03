@@ -1,6 +1,8 @@
 import {Position, TextDocument} from 'vscode';
 import {PHPDOC, PROP} from '../constants';
-import {IPhpNode, nodeName, parsePhp, walkPhp} from './php-ast';
+import {IPhpNode} from '../interfaces';
+import {nodeName, parsePhp, walkPhp} from '../service/php-ast';
+import {capitalizeFirstCharTrimmed} from '../service/text';
 
 export default class Property {
     public name: string = PROP.UNDEFINED;
@@ -83,7 +85,7 @@ export default class Property {
         }
 
         const fallbackProgram = parsePhp(`<?php \n class Foo { \n ${declr} \n } \n`);
-        let fallbackProperty: any = null;
+        let fallbackProperty: IPhpNode|null = null;
         walkPhp(fallbackProgram, (node) => {
             if (fallbackProperty === null && node.kind === 'property') {
                 fallbackProperty = node;
@@ -94,8 +96,9 @@ export default class Property {
             throw new Error('Invalid PHP code');
         }
 
-        const varTypes = this.resolveTypeNames(fallbackProperty.type);
-        if (fallbackProperty.nullable && !varTypes.includes('null')) {
+        const resolvedProperty = fallbackProperty as IPhpNode;
+        const varTypes = this.resolveTypeNames(resolvedProperty.type);
+        if (resolvedProperty.nullable && !varTypes.includes('null')) {
             varTypes.push('null');
         }
 
@@ -103,7 +106,7 @@ export default class Property {
             throw new Error('Invalid PHP code');
         }
 
-        this.applyResolvedProperty(nodeName(fallbackProperty.name), varTypes);
+        this.applyResolvedProperty(nodeName(resolvedProperty.name), varTypes);
     }
 
     private applyResolvedProperty(name: string|null, varTypes: Array<string>): void {
@@ -130,7 +133,6 @@ export default class Property {
         const offset = document.offsetAt(position);
         const program = parsePhp(document.getText());
         let result = 'self';
-
         walkPhp(program, (node) => {
             if (this.classLikeName(node) && this.nodeHasOffset(node, offset)) {
                 result = this.classLikeName(node) ?? result;
@@ -144,7 +146,6 @@ export default class Property {
         const offset = document.offsetAt(position);
         const program = parsePhp(document.getText());
         let classNode: IPhpNode|null = null;
-
         walkPhp(program, (node) => {
             if (this.classLikeName(node) && this.nodeHasOffset(node, offset)) {
                 classNode = node;
@@ -197,16 +198,19 @@ export default class Property {
         const start = node?.loc?.start?.offset;
         const end = node?.loc?.end?.offset;
 
-        return typeof start === 'number' && typeof end === 'number' && start <= offset && offset <= end;
+        return typeof start === 'number'
+            && typeof end === 'number'
+            && start <= offset
+            && offset <= end;
     }
 
-    private resolveTypeNames(typeNode: any): Array<string> {
+    private resolveTypeNames(typeNode: IPhpNode|Array<IPhpNode>|null|undefined): Array<string> {
         if (!typeNode || typeof typeNode !== 'object') {
             return [];
         }
 
-        if (typeNode.kind === 'uniontype' || typeNode.kind === 'intersectiontype') {
-            return typeNode.types.flatMap((node: any) => this.resolveTypeNames(node));
+        if (!Array.isArray(typeNode) && (typeNode.kind === 'uniontype' || typeNode.kind === 'intersectiontype')) {
+            return typeNode.types.flatMap((node: IPhpNode) => this.resolveTypeNames(node));
         }
 
         const typeName = nodeName(typeNode);
@@ -218,15 +222,6 @@ export default class Property {
         const isBoolHint = ['bool', 'boolean'].includes(this.hint ?? '');
         const prefix = type === PROP.SETTER ? 'set' : (isBoolHint ? 'is' : 'get');
 
-        return prefix + this.capitalizeFirstCharTrimmed(this.name);
-    }
-
-    private capitalizeFirstCharTrimmed(input: string): string {
-        const trimmedInput = input.trim();
-        if (!trimmedInput) {
-            return trimmedInput;
-        }
-
-        return trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1);
+        return prefix + capitalizeFirstCharTrimmed(this.name);
     }
 }

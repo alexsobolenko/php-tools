@@ -1,7 +1,7 @@
 import {Position, TextEditorEdit, window} from 'vscode';
 import Feature from '../feature';
 import {CONSTRUCT_ARGS_MAX_LENGTH, DOC_SHOW_DESCR, MESSAGE, PHPDOC, PROP} from '../constants';
-import Property from '../service/property';
+import Property from '../model/property';
 
 export default class Constructor extends Feature {
     private properties: Array<Property> = [];
@@ -15,7 +15,6 @@ export default class Constructor extends Feature {
 
         const propertyNames: Array<string> = [];
         const properties: Array<Property> = [];
-
         const {document} = this.activeEditor;
         for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
             const lineText = document.lineAt(lineNumber).text;
@@ -91,7 +90,6 @@ export default class Constructor extends Feature {
         const phpdocData: Array<string> = [];
         const argProps: Array<string> = [];
         const bodyProps: Array<string> = [];
-
         const showDescription = !!this.getConfig(DOC_SHOW_DESCR, false);
         if (showDescription) {
             phpdocData.push(`${this.className} constructor.`);

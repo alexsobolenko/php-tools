@@ -20,10 +20,7 @@ export default class Fabric extends Feature {
     }
 
     public render() {
-        const editor = this.activeEditor;
-        if (!editor) {
-            this.showMessage('Not a PHP file', MESSAGE.WARNING);
-
+        if (!this.activeEditor) {
             return;
         }
 
@@ -33,7 +30,7 @@ export default class Fabric extends Feature {
                 throw new Error('Missing template to render');
             }
 
-            editor.edit((edit: TextEditorEdit) => {
+            this.activeEditor.edit((edit: TextEditorEdit) => {
                 edit.replace(new Position(0, 0), template);
             });
         } catch (error) {
@@ -62,7 +59,6 @@ export default class Fabric extends Feature {
 
         const addStrictTypes = !!this.getConfig(FAB_STRICT_TYPES, true);
         const strictTypes = addStrictTypes ? 'declare(strict_types=1);\n\n' : '';
-
         const addPhpdoc = !!this.getConfig(FAB_GENERATE_PHPDOC, false);
         const name = `${this.capitalizeFirstCharTrimmed(keyword)} ${this.name}`;
         const phpdoc = addPhpdoc ? this.arrayToPhpdoc([`${name} description.`]) : '';

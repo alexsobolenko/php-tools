@@ -6,8 +6,11 @@ import path from 'node:path';
 import {afterEach, describe, it} from 'node:test';
 import {pathToNamespace, resetProjectCache, watchComposerJson} from '../../service/project';
 
+const createdDirs: Array<string> = [];
+
 function createProjectDir(composer: object|null): string {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'php-tools-project-'));
+    createdDirs.push(dir);
     if (composer !== null) {
         fs.writeFileSync(path.join(dir, 'composer.json'), JSON.stringify(composer));
     }
@@ -19,6 +22,7 @@ describe('project', () => {
     afterEach(() => {
         resetVscodeMock();
         resetProjectCache();
+        createdDirs.splice(0).forEach((dir) => fs.rmSync(dir, {recursive: true, force: true}));
     });
 
     it('resolves a namespace from the PSR-4 autoload map', () => {

@@ -1,17 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {Disposable, workspace} from 'vscode';
+import {IComposerAutoload, IProjectCache} from '../interfaces';
 
-interface ComposerAutoload {
-    [namespace: string]: string|Array<string>;
-}
-
-interface ProjectCache {
-    workspacePath: string;
-    autoload: ComposerAutoload;
-}
-
-let cache: ProjectCache|null = null;
+let cache: IProjectCache|null = null;
 
 function workspacePath(): string {
     const folders = workspace.workspaceFolders;
@@ -19,7 +11,7 @@ function workspacePath(): string {
     return folders && folders.length > 0 ? folders[0].uri.fsPath : '';
 }
 
-function readAutoload(workspaceRoot: string): ComposerAutoload {
+function readAutoload(workspaceRoot: string): IComposerAutoload {
     if (!workspaceRoot) {
         return {};
     }
@@ -35,12 +27,12 @@ function readAutoload(workspaceRoot: string): ComposerAutoload {
         const psr4Dev = (data['autoload-dev'] || {})['psr-4'] || {};
 
         return {...psr4, ...psr4Dev};
-    } catch (error) {
+    } catch {
         return {};
     }
 }
 
-function getCache(): ProjectCache {
+function getCache(): IProjectCache {
     if (cache === null) {
         const root = workspacePath();
         cache = {workspacePath: root, autoload: readAutoload(root)};
@@ -49,12 +41,10 @@ function getCache(): ProjectCache {
     return cache;
 }
 
-/** Drops the cached composer.json data so it is re-read on next use. */
 export function resetProjectCache(): void {
     cache = null;
 }
 
-/** Keeps the cached PSR-4 autoload map in sync with composer.json changes. */
 export function watchComposerJson(): Disposable {
     const watcher = workspace.createFileSystemWatcher('**/composer.json');
     watcher.onDidChange(resetProjectCache);
