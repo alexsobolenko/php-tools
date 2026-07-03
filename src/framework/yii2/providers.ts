@@ -1,7 +1,6 @@
-import {TextDocument, CodeLens, Range, Command, CodeLensProvider, Uri, Position} from 'vscode';
-import path from 'path';
+import {CodeLens, CodeLensProvider, Command, Position, Range, TextDocument, Uri, window} from 'vscode';
 import fs from 'fs';
-import App from '../../app';
+import path from 'path';
 import {
     collectUseStatements,
     nodeName,
@@ -10,9 +9,11 @@ import {
     resolveClassReference,
     tryParsePhp,
     walkPhp,
-} from '../../utils/php-ast';
+} from '../../service/php-ast';
+import {fqcnToPath, getAutoload, getWorkspacePath} from '../../service/project';
+import Yii2 from './service';
 
-function resolveYiiContainerSetClass(node: any, uses: Map<string, string>): string | null {
+function resolveYiiContainerSetClass(node: any, uses: Map<string, string>): string|null {
     if (node.kind !== 'call' || node.what?.kind !== 'propertylookup') {
         return null;
     }
@@ -30,7 +31,7 @@ function resolveYiiContainerSetClass(node: any, uses: Map<string, string>): stri
     return resolveClassReference(node.arguments?.[0], uses);
 }
 
-function resolveYiiConfigClassReference(node: any, uses: Map<string, string>): string | null {
+function resolveYiiConfigClassReference(node: any, uses: Map<string, string>): string|null {
     if (node.kind === 'entry') {
         if (node.value?.kind === 'array') {
             return resolveClassReference(node.key, uses);
@@ -45,11 +46,13 @@ function resolveYiiConfigClassReference(node: any, uses: Map<string, string>): s
 }
 
 export class Yii2ViewProvider implements CodeLensProvider {
-    private aliasCache: {[k: string]: string} | null = null;
-    private aliasCacheMtime: number | null = null;
+    private aliasCache: {[k: string]: string}|null = null;
+    private aliasCacheMtime: number|null = null;
+
+    public constructor(private readonly yii2: Yii2) {}
 
     public async provideCodeLenses(document: TextDocument): Promise<Array<CodeLens>> {
-        if (!App.instance.yii2.used) {
+        if (!this.yii2.used) {
             return [];
         }
 
@@ -97,7 +100,7 @@ export class Yii2ViewProvider implements CodeLensProvider {
     }
 
     private async resolveViewPath(controllerPath: string, viewName: string): Promise<string|null> {
-        const projectRoot = App.instance.composer('workplacePath');
+        const projectRoot = getWorkspacePath();
         const controllerDir = path.dirname(controllerPath);
         const cleanViewName = viewName.replace(/^@\w+\//, '');
 
@@ -113,22 +116,22 @@ export class Yii2ViewProvider implements CodeLensProvider {
                 if (fs.existsSync(viewPath)) {
                     return viewPath;
                 }
-            } catch (e) {
-                console.error(`Error checking path ${viewPath}:`, e);
+            } catch (error) {
+                console.error(`Error checking path ${viewPath}:`, error);
             }
         }
 
         return null;
     }
 
-    private async resolveViewAliases(projectRoot: string, viewName: string): Promise<string[]> {
+    private async resolveViewAliases(projectRoot: string, viewName: string): Promise<Array<string>> {
         const paths = [];
         if (viewName.startsWith('@')) {
             const [alias, ...rest] = viewName.split('/');
             const viewFile = `${rest.join('/')}.php`;
             const aliases = this.loadAliases(projectRoot);
 
-            if (App.instance.hasKey(aliases, alias)) {
+            if (alias in aliases) {
                 paths.push(path.join(projectRoot, aliases[alias], 'views', viewFile));
             }
         }
@@ -161,7 +164,7 @@ export class Yii2ViewProvider implements CodeLensProvider {
         try {
             program = parsePhp(configContent);
         } catch (error) {
-            App.instance.showMessage(`Failed to parse Yii2 config: ${error}`, 'warning');
+            window.showWarningMessage(`Failed to parse Yii2 config: ${(error as Error).message}`);
 
             return defaults;
         }
@@ -207,8 +210,10 @@ export class Yii2ViewProvider implements CodeLensProvider {
 }
 
 export class Yii2DiProvider implements CodeLensProvider {
-    public provideCodeLenses(document: TextDocument): CodeLens[] {
-        if (!App.instance.yii2.used) {
+    public constructor(private readonly yii2: Yii2) {}
+
+    public provideCodeLenses(document: TextDocument): Array<CodeLens> {
+        if (!this.yii2.used) {
             return [];
         }
 
@@ -272,9 +277,9 @@ export class Yii2DiProvider implements CodeLensProvider {
     }
 
     private findDiConfigs(className: string): Array<{file: string, line: number}> {
-        const projectRoot = App.instance.composer('workplacePath');
+        const projectRoot = getWorkspacePath();
         const results: Array<{file: string, line: number}> = [];
-        for (const configFile of App.instance.yii2.diConfigFiles) {
+        for (const configFile of this.yii2.diConfigFiles) {
             const file = path.join(projectRoot, configFile);
             if (!fs.existsSync(file)) {
                 continue;
@@ -285,7 +290,7 @@ export class Yii2DiProvider implements CodeLensProvider {
             try {
                 program = parsePhp(content);
             } catch (error) {
-                App.instance.showMessage(`Failed to parse Yii2 config: ${error}`, 'warning');
+                window.showWarningMessage(`Failed to parse Yii2 config: ${(error as Error).message}`);
 
                 continue;
             }
@@ -309,8 +314,10 @@ export class Yii2DiProvider implements CodeLensProvider {
 }
 
 export class Yii2ConfigToClassProvider implements CodeLensProvider {
-    public provideCodeLenses(document: TextDocument): CodeLens[] {
-        if (!App.instance.yii2.used || !this.isConfigFile(document)) {
+    public constructor(private readonly yii2: Yii2) {}
+
+    public provideCodeLenses(document: TextDocument): Array<CodeLens> {
+        if (!this.yii2.used || !this.isConfigFile(document)) {
             return [];
         }
 
@@ -320,18 +327,18 @@ export class Yii2ConfigToClassProvider implements CodeLensProvider {
     }
 
     private isConfigFile(document: TextDocument): boolean {
-        const workspaceRoot = App.instance.composer('workplacePath');
+        const workspaceRoot = getWorkspacePath();
 
-        return App.instance.yii2.diConfigFiles.some((file) => document.uri.fsPath === path.join(workspaceRoot, file));
+        return this.yii2.diConfigFiles.some((file) => document.uri.fsPath === path.join(workspaceRoot, file));
     }
 
-    private findClassReferences(text: string, document: TextDocument): CodeLens[] {
-        const lenses: CodeLens[] = [];
+    private findClassReferences(text: string, document: TextDocument): Array<CodeLens> {
+        const lenses: Array<CodeLens> = [];
         let program;
         try {
             program = parsePhp(text);
         } catch (error) {
-            App.instance.showMessage(`Failed to parse Yii2 config: ${error}`, 'warning');
+            window.showWarningMessage(`Failed to parse Yii2 config: ${(error as Error).message}`);
 
             return [];
         }
@@ -344,7 +351,7 @@ export class Yii2ConfigToClassProvider implements CodeLensProvider {
                 return;
             }
 
-            const classPath = this.findClassFile(className);
+            const classPath = fqcnToPath(className);
             const range = nodeRange(document, node);
             if (!classPath || !range) {
                 return;
@@ -361,36 +368,8 @@ export class Yii2ConfigToClassProvider implements CodeLensProvider {
     }
 
     private isProjectClass(className: string): boolean {
-        const autoload = App.instance.composer('autoload', {});
-        for (const prefix of Object.keys(autoload)) {
-            if (className.startsWith(prefix)) {
-                return true;
-            }
-        }
+        const autoload = getAutoload();
 
-        return false;
-    }
-
-    private findClassFile(className: string): string | null {
-        const autoload = App.instance.composer('autoload');
-        const workspaceRoot = App.instance.composer('workplacePath', null);
-        if (!workspaceRoot) {
-            return null;
-        }
-
-        for (const [prefix, paths] of Object.entries(autoload)) {
-            if (className.startsWith(prefix)) {
-                const relativePath = `${className.slice(prefix.length).replace(/\\/g, '/')}.php`;
-                const searchPaths = Array.isArray(paths) ? paths : [paths];
-                for (const basePath of searchPaths) {
-                    const fullPath = path.join(workspaceRoot, basePath, relativePath);
-                    if (fs.existsSync(fullPath)) {
-                        return fullPath;
-                    }
-                }
-            }
-        }
-
-        return null;
+        return Object.keys(autoload).some((prefix) => className.startsWith(prefix));
     }
 }

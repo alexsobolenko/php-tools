@@ -1,40 +1,280 @@
 import fs from 'fs';
-import path from 'path';
-import {Position, TextDocument} from 'vscode';
-import {Engine, Name, Parameter} from 'php-parser';
-import App from '../../app';
+import {Position, TextDocument, TextLine} from 'vscode';
 import {
-    A_DOC_LINES_AFTER_DESCR,
-    A_DOC_LINES_BEFORE_RETURN,
-    A_DOC_LINES_BEFORE_THROWS,
-    A_DOC_RETURN_VOID,
-    A_DOC_SHOW_DESCR,
-    A_DOC_SHOW_THROWS_ON_DIFF_LINES,
-    D_REGEX_FUNCTION,
-    D_TYPE_FUNCTION,
-    M_ERROR,
-} from '../../constants';
-import {IParameter} from '../../interfaces';
-import {collectUseStatements, nodeName, walkPhp} from '../../utils/php-ast';
-import {Block} from './base-block';
+    Assign,
+    Catch,
+    Class,
+    ClassConstant,
+    Declaration,
+    ExpressionStatement,
+    Function as PhpFunction,
+    Identifier,
+    Name,
+    Parameter,
+    Program,
+    Variable,
+} from 'php-parser';
+import {PHPDOC, PROP} from '../constants';
+import {IDescriptionConfig, IFunctionDocConfig, IParameter, IPhpNode} from '../interfaces';
+import {TCallable, TRelations, TResolvedCallable, TThrowsContext} from '../types';
+import {collectUseStatements, nodeName, parsePhp, walkPhp} from '../service/php-ast';
+import {fqcnToPath} from '../service/project';
+import {arrayToPhpdoc, capitalizeFirstCharTrimmed} from '../service/text';
+import Property from './property';
 
-type TRelations = Map<string, {extends: string | null, implements: Array<string>}>;
-type TThrowsContext = {
-    functionMap: Map<string, any>,
-    methodMap: Map<string, any>,
-    ownerClass: any | null,
-    currentClassName: string | null,
-    namespaceName: string | null,
-    relations: TRelations,
-    uses: Map<string, string>,
-};
-type TCallable = {node: any, ownerClass: any | null};
-type TResolvedCallable = {node: any, className: string | null, context: TThrowsContext};
+export class Block {
+    public type: string;
+    public name: string;
+    public tab: string;
+    public startLine: number;
+    public activeLine: TextLine;
+    public importsToAdd: Array<string>;
+    public error: string|null = null;
+    protected document: TextDocument;
 
-const FALLBACK_PHP_PARSER_PARAMS = {
-    parser: {extractDoc: true, suppressErrors: true, version: '8.4'},
-    ast: {withPositions: true},
-};
+    public constructor(document: TextDocument, position: Position) {
+        this.document = document;
+        this.type = 'undefined';
+        this.name = '';
+        this.importsToAdd = [];
+        this.activeLine = document.lineAt(position.line);
+        this.tab = this.activeLine.text.substring(0, this.activeLine.firstNonWhitespaceCharacterIndex);
+        this.startLine = position.line;
+    }
+
+    public get template(): string {
+        return '';
+    }
+
+    protected parseCode(buffer: string): Program {
+        return parsePhp(buffer);
+    }
+
+    protected wrapTemplate(template: string, addLeadingEmptyLine: boolean = false): string {
+        if (!addLeadingEmptyLine) {
+            return template;
+        }
+
+        for (let lineNumber = this.startLine - 1; lineNumber >= 0; lineNumber--) {
+            const prevLine = this.document.lineAt(lineNumber).text.trim();
+            if (prevLine === '') {
+                return template;
+            }
+
+            if (prevLine.endsWith('{')) {
+                return template;
+            }
+
+            return `\n${template}`;
+        }
+
+        return template;
+    }
+}
+
+export class ClassBlock extends Block {
+    public kind: string;
+
+    public constructor(document: TextDocument, position: Position) {
+        super(document, position);
+
+        this.type = PHPDOC.CLASS.TYPE;
+        this.kind = '';
+
+        try {
+            let declr = this.activeLine.text.trim();
+            declr = `${declr} ${declr.includes('{') ? '}' : ' {}'}`;
+            const program = this.parseCode(`<?php \n ${declr} \n`);
+
+            const klass = program.children.find((node) => PHPDOC.VALID_KLASS.includes(node.kind)) as
+                Declaration|undefined;
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid class declaration');
+            }
+
+            this.name = (klass.name as Identifier).name;
+            this.kind = klass.kind;
+        } catch (error) {
+            this.error = `Failed to parse class: ${(error as Error).message}.`;
+        }
+    }
+
+    public get template(): string {
+        const name = `${capitalizeFirstCharTrimmed(this.kind)} ${this.name}`;
+
+        return arrayToPhpdoc([`${name} description.`], this.tab);
+    }
+}
+
+export class ConstantBlock extends Block {
+    public constType: string|null;
+
+    public constructor(document: TextDocument, position: Position, private readonly config: IDescriptionConfig) {
+        super(document, position);
+
+        this.type = PHPDOC.CONSTANT.TYPE;
+        this.constType = null;
+
+        try {
+            let declr = this.activeLine.text.trim();
+            if (!declr.includes(';')) {
+                if (declr.endsWith('[')) {
+                    declr = `${declr}];`;
+                } else if (declr.endsWith('\'')) {
+                    declr = `${declr}';`;
+                } else if (declr.endsWith('"')) {
+                    declr = `${declr}";`;
+                } else {
+                    declr = `${declr};`;
+                }
+            }
+
+            const program = this.parseCode(`<?php \n class Foo { \n ${declr} \n } \n`);
+            const klass = program.children.find((node) => PHPDOC.VALID_KLASS.includes(node.kind)) as Class|undefined;
+            if (typeof klass === 'undefined') {
+                throw new Error('Invalid class declaration');
+            }
+
+            const stmt = klass.body.find((node) => node.kind === 'classconstant') as ClassConstant|undefined;
+            if (typeof stmt === 'undefined') {
+                throw new Error('Invalid constant statement declaration');
+            }
+
+            // Constant.name is declared as `string` in php-parser's types, but at runtime it is
+            // always an Identifier-shaped node ({kind, name}) - IPhpNode reflects that accurately.
+            const konst: IPhpNode|undefined = stmt.constants.find((node) => node.kind === 'constant');
+            if (typeof konst === 'undefined') {
+                throw new Error('Invalid constant');
+            }
+
+            this.name = konst.name.name;
+            const matches = declr.match(PHPDOC.CONSTANT.REGEX) as Array<string>|null;
+            this.constType = (matches && matches.length >= 3)
+                ? (/^[A-Z]+$/.test(matches[2]) ? 'mixed' : matches[2])
+                : 'mixed';
+        } catch (error) {
+            this.constType = 'mixed';
+            this.error = `Failed to parse constant: ${(error as Error).message}.`;
+        }
+    }
+
+    public get template(): string {
+        const data: Array<string> = [];
+
+        if (this.config.showDescription) {
+            data.push(`${this.name} description.`);
+            for (let i = 0; i < this.config.linesAfterDescription; i++) {
+                data.push('');
+            }
+        }
+
+        data.push(`@var ${this.constType}`);
+
+        return this.wrapTemplate(arrayToPhpdoc(data, this.tab), true);
+    }
+}
+
+export class VariableBlock extends Block {
+    public varHint: string;
+
+    public constructor(document: TextDocument, position: Position) {
+        super(document, position);
+
+        this.type = 'variable';
+        this.varHint = 'mixed';
+
+        try {
+            const line = this.activeLine.text.trim();
+            const declr = line.endsWith(';') ? line : `${line};`;
+            const program = this.parseCode(`<?php function demo() { ${declr} }`);
+            const func = program.children.find((node) => node.kind === 'function') as PhpFunction|undefined;
+            const body = func?.body?.children ?? [];
+            const exprStmt = body.find((node) => node.kind === 'expressionstatement') as
+                ExpressionStatement|undefined;
+            const assign = exprStmt?.expression as Assign|undefined;
+            if (!assign || assign.kind !== 'assign' || assign.operator !== '=') {
+                throw new Error('Invalid variable assignment');
+            }
+
+            const variable = assign.left as Variable;
+            if (!variable || variable.kind !== 'variable' || typeof variable.name !== 'string') {
+                throw new Error('Invalid variable declaration');
+            }
+
+            this.name = variable.name;
+            this.varHint = this.detectVarHint(assign.right);
+        } catch (error) {
+            this.varHint = 'mixed';
+            this.error = `Failed to parse variable: ${(error as Error).message}.`;
+        }
+    }
+
+    public get template(): string {
+        return `${this.tab}/** @var ${this.varHint} $${this.name} */\n`;
+    }
+
+    private detectVarHint(node: IPhpNode|null|undefined): string {
+        if (!node || typeof node !== 'object') {
+            return 'mixed';
+        }
+
+        switch (node.kind) {
+            case 'number':
+                return String(node.value).includes('.') ? 'float' : 'int';
+            case 'string':
+            case 'encapsed':
+            case 'nowdoc':
+                return 'string';
+            case 'boolean':
+                return 'bool';
+            case 'array':
+            case 'list':
+                return 'array';
+            case 'nullkeyword':
+                return 'null';
+            case 'new':
+                return node.what?.name ?? 'object';
+            default:
+                return 'mixed';
+        }
+    }
+}
+
+export class PropertyBlock extends Block {
+    public varHint: string = 'mixed';
+
+    public constructor(document: TextDocument, position: Position, private readonly config: IDescriptionConfig) {
+        super(document, position);
+
+        this.type = PHPDOC.PROPERTY.TYPE;
+
+        const property = new Property(document, position);
+        if (property.error) {
+            this.error = property.error;
+        }
+
+        if (property.name !== PROP.UNDEFINED) {
+            this.name = property.name;
+        }
+
+        this.varHint = property.hint ?? 'mixed';
+    }
+
+    public get template(): string {
+        const data: Array<string> = [];
+        if (this.config.showDescription) {
+            data.push(`${this.name} description.`);
+            for (let i = 0; i < this.config.linesAfterDescription; i++) {
+                data.push('');
+            }
+        }
+
+        data.push(`@var ${this.varHint}`);
+
+        return this.wrapTemplate(arrayToPhpdoc(data, this.tab), true);
+    }
+}
+
 
 export class FunctionBlock extends Block {
     public params: Array<IParameter>;
@@ -42,22 +282,20 @@ export class FunctionBlock extends Block {
     public throws: Array<string>;
     public renderedThrows: Array<string>;
 
-    public constructor(position: Position) {
-        super(position);
+    public constructor(document: TextDocument, position: Position, private readonly config: IFunctionDocConfig) {
+        super(document, position);
 
-        this.type = D_TYPE_FUNCTION;
+        this.type = PHPDOC.FUNCTION.TYPE;
         this.params = [];
         this.throws = [];
         this.renderedThrows = [];
         this.returnHint = '';
 
-        const document = App.instance.editor.document as TextDocument;
-        const code = document.getText();
-
         try {
+            const code = document.getText();
             const funcDeclr = document.lineAt(this.startLine).text.trim();
-            const matches = funcDeclr.match(D_REGEX_FUNCTION) as Array<any>;
-            if (!matches[1]) {
+            const matches = funcDeclr.match(PHPDOC.FUNCTION.REGEX);
+            if (!matches || !matches[1]) {
                 throw new Error('Function name not found');
             }
 
@@ -85,56 +323,48 @@ export class FunctionBlock extends Block {
 
             const methodMap = callable.ownerClass
                 ? this.collectClassMethods(callable.ownerClass)
-                : new Map<string, any>();
+                : new Map<string, IPhpNode>();
             const functionMap = this.collectFunctions(ast);
             const relations = this.collectClassRelations(ast, namespaceName, uses);
-            this.throws = Array.from(this.collectThrows(
-                callable.node.body,
-                {
-                    functionMap,
-                    methodMap,
-                    ownerClass: callable.ownerClass,
-                    currentClassName: callable.ownerClass
-                        ? this.resolveTypeName(callable.ownerClass.name, namespaceName, uses)
-                        : null,
-                    namespaceName,
-                    relations,
-                    uses,
-                },
-                new Set<string>(),
-                [],
-            ));
+            const context = {
+                functionMap,
+                methodMap,
+                ownerClass: callable.ownerClass,
+                currentClassName: callable.ownerClass
+                    ? this.resolveTypeName(callable.ownerClass.name, namespaceName, uses)
+                    : null,
+                namespaceName,
+                relations,
+                uses,
+            };
+            this.throws = Array.from(this.collectThrows(callable.node.body, context, new Set<string>(), []));
             this.renderedThrows = [...this.throws];
 
             if (this.name === '__construct') {
                 this.returnHint = 'void';
             } else {
-                const funcType = callable.node.type as any;
-                const types = funcType
-                    ? (
-                        callable.node.type.kind === 'uniontype'
-                            ? funcType.types.map((t: Name) => t.name)
-                            : [funcType.name]
-                    )
-                    : ['mixed'];
+                const funcType = callable.node.type;
+                const typeFromFunc = callable.node.type.kind === 'uniontype'
+                    ? funcType.types.map((t: Name) => t.name)
+                    : [funcType.name];
+                const types = funcType ? typeFromFunc : ['mixed'];
                 if (callable.node.nullable && !types.includes('void') && !types.includes('null')) {
                     types.push('null');
                 }
                 this.returnHint = types.join('|');
             }
-        } catch (error: any) {
+        } catch (error) {
             this.returnHint = '';
             this.params = [];
-            App.instance.showMessage(`Failed to parse function: ${error}.`, M_ERROR);
+            this.error = `Failed to parse function: ${(error as Error).message}.`;
         }
     }
 
     public get template(): string {
         const data = [];
-
-        if (!!App.instance.config(A_DOC_SHOW_DESCR, false)) {
+        if (this.config.showDescription) {
             data.push(`${this.name} description.`);
-            for (let i = 0; i < App.instance.config(A_DOC_LINES_AFTER_DESCR, 0); i++) {
+            for (let i = 0; i < this.config.linesAfterDescription; i++) {
                 data.push('');
             }
         }
@@ -143,10 +373,10 @@ export class FunctionBlock extends Block {
             data.push(`@param ${p.hint} $${p.name}`);
         });
 
-        const returnVoid = !!App.instance.config(A_DOC_RETURN_VOID, false);
+        const {returnVoid} = this.config;
         const emptyLinesBeforeReturn = (!returnVoid && this.returnHint === 'void')
             ? 0
-            : App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0);
+            : this.config.linesBeforeReturn;
         for (let i = 0; i < emptyLinesBeforeReturn; i++) {
             data.push('');
         }
@@ -155,25 +385,25 @@ export class FunctionBlock extends Block {
             data.push(`@return ${this.returnHint}`);
         }
 
-        const emptyLinesBeforeThrows = App.instance.config(A_DOC_LINES_BEFORE_THROWS, 0);
+        const emptyLinesBeforeThrows = this.config.linesBeforeThrows;
         if (this.renderedThrows.length > 0 && emptyLinesBeforeThrows > 0) {
             for (let i = 0; i < emptyLinesBeforeThrows; i++) {
                 data.push('');
             }
         }
 
-        const showThrowsOnDiffLines = !!App.instance.config(A_DOC_SHOW_THROWS_ON_DIFF_LINES, true);
+        const {showThrowsOnDiffLines} = this.config;
         (showThrowsOnDiffLines ? this.renderedThrows : [this.renderedThrows.join('|')]).forEach((v: string) => {
             data.push(`@throws ${v}`);
         });
 
-        return App.instance.arrayToPhpdoc(data, this.tab);
+        return arrayToPhpdoc(data, this.tab);
     }
 
     public prepareThrowsForRender(
         existingImports: Set<string>,
         usedAliases: Set<string>,
-        namespaceName: string | null,
+        namespaceName: string|null,
     ): void {
         this.importsToAdd = [];
         this.renderedThrows = this.throws.map((exceptionName) => {
@@ -236,7 +466,7 @@ export class FunctionBlock extends Block {
         return typeName.startsWith('\\') && !typeName.slice(1).includes('\\');
     }
 
-    private extractNamespaceName(program: any): string|null {
+    private extractNamespaceName(program: Program): string|null {
         let namespace: string|null = null;
 
         walkPhp(program, (node) => {
@@ -248,8 +478,8 @@ export class FunctionBlock extends Block {
         return namespace;
     }
 
-    private findCallableAtLine(program: any, line: number): TCallable | null {
-        let result: TCallable | null = null;
+    private findCallableAtLine(program: Program, line: number): TCallable|null {
+        let result: TCallable|null = null;
 
         walkPhp(program, (node, parent) => {
             if (result !== null || !['method', 'function'].includes(node.kind ?? '')) {
@@ -273,28 +503,26 @@ export class FunctionBlock extends Block {
         return result;
     }
 
-    private parseCallableDeclaration(document: TextDocument, line: number): TCallable | null {
+    private parseCallableDeclaration(document: TextDocument, line: number): TCallable|null {
         const declaration = this.extractCallableDeclaration(document, line);
         if (declaration === null) {
             return null;
         }
 
         try {
-            const parser = new Engine(FALLBACK_PHP_PARSER_PARAMS);
-            const program = parser.parseCode(`<?php\nclass PhpToolsPhpDocCallable\n{\n${declaration}\n{\n}\n}\n`, '');
+            const program = this.parseCode(`<?php\nclass PhpToolsPhpDocCallable\n{\n${declaration}\n{\n}\n}\n`);
 
             return this.findCallableAtLine(program, 3);
-        } catch (error) {
+        } catch {
             return null;
         }
     }
 
-    private extractCallableDeclaration(document: TextDocument, line: number): string | null {
+    private extractCallableDeclaration(document: TextDocument, line: number): string|null {
         const parts: Array<string> = [];
         let hasArguments = false;
         let parenthesesDepth = 0;
         let finished = false;
-
         for (let lineNumber = line; lineNumber < document.lineCount && !finished; lineNumber++) {
             const lineText = document.lineAt(lineNumber).text;
             let buffer = '';
@@ -327,9 +555,9 @@ export class FunctionBlock extends Block {
         return parts.join('\n');
     }
 
-    private collectClassMethods(ownerClass: any): Map<string, any> {
-        const methods = new Map<string, any>();
-        (ownerClass?.body ?? []).forEach((node: any) => {
+    private collectClassMethods(ownerClass: IPhpNode|null): Map<string, IPhpNode> {
+        const methods = new Map<string, IPhpNode>();
+        (ownerClass?.body ?? []).forEach((node: IPhpNode) => {
             if (node.kind !== 'method') {
                 return;
             }
@@ -343,9 +571,8 @@ export class FunctionBlock extends Block {
         return methods;
     }
 
-    private collectFunctions(program: any): Map<string, any> {
-        const functions = new Map<string, any>();
-
+    private collectFunctions(program: Program): Map<string, IPhpNode> {
+        const functions = new Map<string, IPhpNode>();
         walkPhp(program, (node, parent) => {
             if (node.kind !== 'function' || parent?.kind === 'class') {
                 return;
@@ -361,12 +588,11 @@ export class FunctionBlock extends Block {
     }
 
     private collectClassRelations(
-        program: any,
-        namespaceName: string | null,
+        program: Program,
+        namespaceName: string|null,
         uses: Map<string, string>,
     ): TRelations {
-        const relations = new Map<string, {extends: string | null, implements: Array<string>}>();
-
+        const relations = new Map<string, {extends: string|null, implements: Array<string>}>();
         walkPhp(program, (node) => {
             if (!['class', 'interface'].includes(node.kind ?? '')) {
                 return;
@@ -379,9 +605,8 @@ export class FunctionBlock extends Block {
 
             const extendsName = this.resolveTypeName(node.extends, namespaceName, uses);
             const interfaces = (node.implements ?? [])
-                .map((entry: any) => this.resolveTypeName(entry, namespaceName, uses))
-                .filter((entry: string | null): entry is string => entry !== null);
-
+                .map((entry: IPhpNode) => this.resolveTypeName(entry, namespaceName, uses))
+                .filter((entry: string|null): entry is string => entry !== null);
             relations.set(className, {
                 extends: extendsName,
                 implements: interfaces,
@@ -392,13 +617,12 @@ export class FunctionBlock extends Block {
     }
 
     private collectThrows(
-        node: any,
+        node: IPhpNode|Array<IPhpNode>|null|undefined,
         context: TThrowsContext,
         visited: Set<string>,
         caughtTypes: Array<string>,
     ): Set<string> {
         const throwsSet = new Set<string>();
-
         if (Array.isArray(node)) {
             node.forEach((child) => {
                 this.collectThrows(child, context, visited, caughtTypes).forEach((item) => throwsSet.add(item));
@@ -435,7 +659,7 @@ export class FunctionBlock extends Block {
 
             this.collectThrows(current.body, context, visited, tryCaughtTypes)
                 .forEach((item) => throwsSet.add(item));
-            (current.catches ?? []).forEach((catchNode: any) => {
+            (current.catches ?? []).forEach((catchNode: IPhpNode) => {
                 this.collectThrows(catchNode.body, context, visited, caughtTypes)
                     .forEach((item) => throwsSet.add(item));
             });
@@ -457,7 +681,7 @@ export class FunctionBlock extends Block {
     }
 
     private collectThrowsFromCall(
-        callNode: any,
+        callNode: IPhpNode,
         context: TThrowsContext,
         visited: Set<string>,
         caughtTypes: Array<string>,
@@ -482,7 +706,7 @@ export class FunctionBlock extends Block {
         return throwsSet;
     }
 
-    private resolveCalledCallable(callNode: any, context: TThrowsContext): TResolvedCallable | null {
+    private resolveCalledCallable(callNode: IPhpNode, context: TThrowsContext): TResolvedCallable|null {
         const target = callNode.what;
         if (!target || typeof target !== 'object') {
             return null;
@@ -525,14 +749,14 @@ export class FunctionBlock extends Block {
     }
 
     private collectCatchTypes(
-        catches: Array<any>,
-        namespaceName: string | null,
+        catches: Array<Catch>,
+        namespaceName: string|null,
         uses: Map<string, string>,
     ): Array<string> {
         const types = new Set<string>();
 
         catches.forEach((catchNode) => {
-            (catchNode.what ?? []).forEach((entry: any) => {
+            (catchNode.what ?? []).forEach((entry: Name) => {
                 const resolved = this.resolveTypeName(entry, namespaceName, uses);
                 if (resolved) {
                     types.add(resolved);
@@ -543,7 +767,11 @@ export class FunctionBlock extends Block {
         return Array.from(types);
     }
 
-    private resolveThrownType(node: any, namespaceName: string | null, uses: Map<string, string>): string | null {
+    private resolveThrownType(
+        node: IPhpNode|null|undefined,
+        namespaceName: string|null,
+        uses: Map<string, string>,
+    ): string|null {
         if (!node || typeof node !== 'object') {
             return null;
         }
@@ -555,7 +783,11 @@ export class FunctionBlock extends Block {
         return this.resolveTypeName(node, namespaceName, uses);
     }
 
-    private resolveTypeName(node: any, namespaceName: string | null, uses: Map<string, string>): string | null {
+    private resolveTypeName(
+        node: IPhpNode|null|undefined,
+        namespaceName: string|null,
+        uses: Map<string, string>,
+    ): string|null {
         const rawName = nodeName(node);
         if (!rawName) {
             return null;
@@ -603,13 +835,13 @@ export class FunctionBlock extends Block {
     }
 
     private resolveCallOwnerClass(
-        node: any,
+        node: IPhpNode,
         context: {
-            ownerClass: any | null,
-            namespaceName: string | null,
+            ownerClass: IPhpNode|null,
+            namespaceName: string|null,
             uses: Map<string, string>,
         },
-    ): string | null {
+    ): string|null {
         if (!node || typeof node !== 'object') {
             return null;
         }
@@ -630,11 +862,11 @@ export class FunctionBlock extends Block {
     private resolveThisPropertyType(
         propertyName: string,
         context: {
-            ownerClass: any | null,
-            namespaceName: string | null,
+            ownerClass: IPhpNode|null,
+            namespaceName: string|null,
             uses: Map<string, string>,
         },
-    ): string | null {
+    ): string|null {
         const {ownerClass} = context;
         if (!ownerClass) {
             return null;
@@ -661,8 +893,8 @@ export class FunctionBlock extends Block {
         return null;
     }
 
-    private resolveExternalMethod(className: string, methodName: string): TResolvedCallable | null {
-        const classPath = this.fqcnToPath(className);
+    private resolveExternalMethod(className: string, methodName: string): TResolvedCallable|null {
+        const classPath = fqcnToPath(className);
         if (!classPath || !fs.existsSync(classPath)) {
             return null;
         }
@@ -683,32 +915,29 @@ export class FunctionBlock extends Block {
                 return null;
             }
 
-            return {
-                node,
-                className,
-                context: {
-                    functionMap: this.collectFunctions(program),
-                    methodMap,
-                    ownerClass,
-                    currentClassName: className,
-                    namespaceName,
-                    relations: this.collectClassRelations(program, namespaceName, uses),
-                    uses,
-                },
+            const context = {
+                functionMap: this.collectFunctions(program),
+                methodMap,
+                ownerClass,
+                currentClassName: className,
+                namespaceName,
+                relations: this.collectClassRelations(program, namespaceName, uses),
+                uses,
             };
-        } catch (error) {
+
+            return {node, className, context};
+        } catch {
             return null;
         }
     }
 
     private findClassByName(
-        program: any,
+        program: Program,
         fqcn: string,
-        namespaceName: string | null,
+        namespaceName: string|null,
         uses: Map<string, string>,
-    ): any | null {
-        let result: any | null = null;
-
+    ): IPhpNode|null {
+        let result: IPhpNode|null = null;
         walkPhp(program, (node) => {
             if (result !== null || node.kind !== 'class') {
                 return;
@@ -721,30 +950,5 @@ export class FunctionBlock extends Block {
         });
 
         return result;
-    }
-
-    private fqcnToPath(fqcn: string): string | null {
-        const autoload = App.instance.composer('autoload', {});
-        const workplacePath = App.instance.composer('workplacePath', null);
-        if (!workplacePath) {
-            return null;
-        }
-
-        for (const [prefix, paths] of Object.entries(autoload)) {
-            if (!fqcn.startsWith(prefix)) {
-                continue;
-            }
-
-            const relativePath = `${fqcn.slice(prefix.length).replace(/\\/g, '/')}.php`;
-            const searchPaths = Array.isArray(paths) ? paths : [paths];
-            for (const basePath of searchPaths) {
-                const fullPath = path.join(workplacePath, basePath as string, relativePath);
-                if (fs.existsSync(fullPath)) {
-                    return fullPath;
-                }
-            }
-        }
-
-        return null;
     }
 }

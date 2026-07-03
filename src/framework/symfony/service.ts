@@ -1,5 +1,6 @@
 import {CodeLensProvider, CompletionItemProvider, Location, Position, Uri, workspace} from 'vscode';
 import yaml from 'yaml';
+import {IComposerData} from '../../interfaces';
 import {
     SymfonyDoctrineEntityFieldsProvider,
     SymfonyRouteReferencesProvider,
@@ -8,7 +9,6 @@ import {
     SymfonyServicesYamlProvider,
     SymfonyTemplatesProvider,
 } from './providers';
-import App from '../../app';
 
 export default class Symfony {
     public routes: Map<string, Location>;
@@ -23,7 +23,7 @@ export default class Symfony {
         this.services = new Map();
     }
 
-    public static checkComposerData(data: any): boolean {
+    public static checkComposerData(data: IComposerData): boolean {
         if (data.require?.['symfony/symfony'] || data.require?.['symfony/framework-bundle']) {
             return true;
         }
@@ -43,32 +43,36 @@ export default class Symfony {
         return [
             {
                 selector: {language: 'php'},
-                provider: new SymfonyServicesProvider(),
+                provider: new SymfonyServicesProvider(this),
             },
             {
                 selector: {language: 'yaml', pattern: '**/config/services.{yml,yaml}'},
-                provider: new SymfonyServicesYamlProvider(),
+                provider: new SymfonyServicesYamlProvider(this),
             },
             {
                 selector: {language: 'php'},
-                provider: new SymfonyTemplatesProvider(),
+                provider: new SymfonyTemplatesProvider(this),
             },
             {
                 selector: {language: 'twig'},
-                provider: new SymfonyTemplatesProvider(),
+                provider: new SymfonyTemplatesProvider(this),
             },
             {
                 selector: {language: 'php'},
-                provider: new SymfonyRouteReferencesProvider(),
+                provider: new SymfonyRouteReferencesProvider(this),
             },
             {
                 selector: {language: 'twig'},
-                provider: new SymfonyRouteReferencesProvider(),
+                provider: new SymfonyRouteReferencesProvider(this),
             },
         ];
     }
 
-    public get completionProviders(): Array<{selector: Object, provider: CompletionItemProvider, triggers?: string[]}> {
+    public get completionProviders(): Array<{
+        selector: Object,
+        provider: CompletionItemProvider,
+        triggers?: Array<string>,
+    }> {
         if (!this.used) {
             return [];
         }
@@ -76,12 +80,12 @@ export default class Symfony {
         return [
             {
                 selector: {language: 'yaml', pattern: '**/config/services.{yml,yaml}'},
-                provider: new SymfonyServiceArgumentsProvider(),
+                provider: new SymfonyServiceArgumentsProvider(this),
                 triggers: ['$'],
             },
             {
                 selector: {language: 'php'},
-                provider: new SymfonyDoctrineEntityFieldsProvider(),
+                provider: new SymfonyDoctrineEntityFieldsProvider(this),
                 triggers: ['.'],
             },
         ];
@@ -98,19 +102,19 @@ export default class Symfony {
         let parsed;
         try {
             parsed = yaml.parse(text);
-        } catch (error) {
+        } catch {
             return;
         }
 
         if (parsed.services) {
             for (const [serviceId, config] of Object.entries(parsed.services)) {
-                if (typeof config === 'object' && (config as any).class) {
+                if (typeof config === 'object' && config !== null && (config as any).class) {
                     const fqcn = (config as any).class.trim();
                     const position = this.findServicePosition(text, serviceId);
                     if (position) {
                         this.services.set(fqcn, new Location(uri, position));
                     }
-                } else if (App.instance.looksLikeFqcn(serviceId)) {
+                } else if (this.looksLikeFqcn(serviceId)) {
                     const position = this.findServicePosition(text, serviceId);
                     if (position) {
                         this.services.set(serviceId, new Location(uri, position));
@@ -136,7 +140,9 @@ export default class Symfony {
                 await workspace.fs.stat(uri);
 
                 return uri;
-            } catch (e) {}
+            } catch {
+                continue;
+            }
         }
 
         return null;
@@ -157,7 +163,9 @@ export default class Symfony {
 
         try {
             await this.updateServices(uri);
-        } catch (e) {}
+        } catch {
+            // Ignored - createService still returns a best-effort location below.
+        }
 
         return this.getServiceLocation(fqcn) || new Location(uri, new Position(insertion.line, 0));
     }
@@ -192,6 +200,10 @@ export default class Symfony {
             const doc = await workspace.openTextDocument(file);
             this.collectRoutes(doc.getText(), file);
         }
+    }
+
+    private looksLikeFqcn(serviceId: string): boolean {
+        return /^[A-Za-z0-9_\\]+$/.test(serviceId);
     }
 
     private findServicePosition(text: string, serviceId: string): Position|null {
@@ -251,7 +263,7 @@ export default class Symfony {
         };
     }
 
-    private findServicesInsertionOffset(text: string, fromOffset: number): number {
+    private findServicesInsertionOffset(text: string, _fromOffset: number): number {
         const lines = text.split('\n');
         let offset = 0;
         let insideServices = false;
@@ -331,7 +343,7 @@ export default class Symfony {
         });
     }
 
-    private findNextMethodOffset(text: string, fromOffset: number): number | null {
+    private findNextMethodOffset(text: string, fromOffset: number): number|null {
         const methodRegex = /function\s+\w+\s*\(/g;
         methodRegex.lastIndex = fromOffset;
         const match = methodRegex.exec(text);

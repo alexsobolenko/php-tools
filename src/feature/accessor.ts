@@ -1,30 +1,28 @@
 import {Position, TextEditorEdit, window} from 'vscode';
-import App from '../../app';
+import Feature from '../feature';
 import {
-    A_DOC_LINES_AFTER_DESCR,
-    A_DOC_LINES_BEFORE_RETURN,
-    A_DOC_SHOW_DESCR,
-    A_GS_GENERATE_PHPDOC,
-    A_GS_RETURN_SELF,
-    M_ERROR,
-    R_GETTER,
-    R_SETTER,
-    R_UNDEFINED_PROPERTY,
-} from '../../constants';
-import {nodeName, parsePhp, walkPhp} from '../../utils/php-ast';
-import Property from './property';
+    DOC_LINES_AFTER_DESCR,
+    DOC_LINES_BEFORE_RETURN,
+    DOC_SHOW_DESCR,
+    GS_GENERATE_PHPDOC,
+    GS_RETURN_SELF,
+    MESSAGE,
+    PROP,
+} from '../constants';
+import Property from '../model/property';
+import {nodeName, parsePhp, walkPhp} from '../service/php-ast';
 
-export default class Resolver {
-    public properties: Array<Property>;
+export default class Accessor extends Feature {
+    private properties: Array<Property>;
 
     public constructor(positions: Array<Position>) {
-        this.properties = positions.map((position: Position) => new Property(position));
+        super();
+        const document = this.activeEditor?.document;
+        this.properties = document ? positions.map((position) => new Property(document, position)) : [];
     }
 
     public static async selectProperties(placeHolder: string): Promise<Array<Position>> {
-        const {document} = App.instance.editor;
         const positions = this.collectProperties();
-
         const selectedProps = await window.showQuickPick(positions.map((p) => p.name), {
             canPickMany: true,
             placeHolder,
@@ -41,11 +39,15 @@ export default class Resolver {
     }
 
     private static collectProperties(): Array<{name: string, position: Position}> {
-        const {document} = App.instance.editor;
         const positions: Array<{name: string, position: Position}> = [];
-        const seen = new Set<string>();
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return positions;
+        }
 
         try {
+            const {document} = editor;
+            const seen = new Set<string>();
             const program = parsePhp(document.getText());
             walkPhp(program, (node, parent) => {
                 if (node.kind === 'property') {
@@ -61,10 +63,7 @@ export default class Resolver {
                     }
 
                     seen.add(key);
-                    positions.push({
-                        name,
-                        position: document.positionAt(offset),
-                    });
+                    positions.push({name, position: document.positionAt(offset)});
 
                     return;
                 }
@@ -88,42 +87,38 @@ export default class Resolver {
                     }
 
                     seen.add(key);
-                    positions.push({
-                        name,
-                        position: document.positionAt(offset),
-                    });
+                    positions.push({name, position: document.positionAt(offset)});
                 }
             });
 
             return positions;
-        } catch (error: any) {
-            App.instance.showMessage(`Failed to parse properties: ${error}.`, M_ERROR);
+        } catch (error) {
+            window.showErrorMessage(`Failed to parse properties: ${(error as Error).message}.`);
 
             return positions;
         }
     }
 
     public getterTemplate(property: Property): string {
-        if (property.name === R_UNDEFINED_PROPERTY) {
+        if (property.name === PROP.UNDEFINED) {
             return '';
         }
 
-        const fcnName = property.getFunction(R_GETTER);
-
-        const generatePhpdoc = !!App.instance.config(A_GS_GENERATE_PHPDOC, true);
+        const fcnName = property.getFunction(PROP.GETTER);
+        const generatePhpdoc = !!this.getConfig(GS_GENERATE_PHPDOC, true);
         let phpdoc = '';
         if (generatePhpdoc) {
-            const data = [];
+            const data: Array<string> = [];
 
-            if (!!App.instance.config(A_DOC_SHOW_DESCR, false)) {
+            if (!!this.getConfig(DOC_SHOW_DESCR, false)) {
                 data.push(`Getter for ${property.name}`);
-                for (let i = 0; i < App.instance.config(A_DOC_LINES_AFTER_DESCR, 0); i++) {
+                for (let i = 0; i < this.getConfig(DOC_LINES_AFTER_DESCR, 0); i++) {
                     data.push('');
                 }
             }
 
             data.push(`@return ${property.hint}`);
-            phpdoc = App.instance.arrayToPhpdoc(data, property.tab);
+            phpdoc = this.arrayToPhpdoc(data, property.tab);
         }
 
         return `\n${phpdoc}`
@@ -134,24 +129,22 @@ export default class Resolver {
     }
 
     public setterTemplate(property: Property): string {
-        if (property.name === R_UNDEFINED_PROPERTY) {
+        if (property.name === PROP.UNDEFINED) {
             return '';
         }
 
-        const fcnName = property.getFunction(R_SETTER);
-
-        const returnSelf = !!App.instance.config(A_GS_RETURN_SELF, false);
+        const fcnName = property.getFunction(PROP.SETTER);
+        const returnSelf = !!this.getConfig(GS_RETURN_SELF, false);
         const returnType = returnSelf ? property.className : 'void';
         const returnInstructions = returnSelf ? `\n${property.tab}${property.tab}return $this;\n` : '';
-
-        const generatePhpdoc = !!App.instance.config(A_GS_GENERATE_PHPDOC, true);
+        const generatePhpdoc = !!this.getConfig(GS_GENERATE_PHPDOC, true);
         let phpdoc = '';
         if (generatePhpdoc) {
-            const data = [];
+            const data: Array<string> = [];
 
-            if (!!App.instance.config(A_DOC_SHOW_DESCR, false)) {
-                data.push(`Getter for ${property.name}`);
-                for (let i = 0; i < App.instance.config(A_DOC_LINES_AFTER_DESCR, 0); i++) {
+            if (!!this.getConfig(DOC_SHOW_DESCR, false)) {
+                data.push(`Setter for ${property.name}`);
+                for (let i = 0; i < this.getConfig(DOC_LINES_AFTER_DESCR, 0); i++) {
                     data.push('');
                 }
             }
@@ -159,13 +152,13 @@ export default class Resolver {
             data.push(`@param ${property.hint} $${property.name}`);
 
             if (returnSelf) {
-                for (let i = 0; i < App.instance.config(A_DOC_LINES_BEFORE_RETURN, 0); i++) {
+                for (let i = 0; i < this.getConfig(DOC_LINES_BEFORE_RETURN, 0); i++) {
                     data.push('');
                 }
                 data.push(`@return ${property.className}`);
             }
 
-            phpdoc = App.instance.arrayToPhpdoc(data, property.tab);
+            phpdoc = this.arrayToPhpdoc(data, property.tab);
         }
 
         return `\n${phpdoc}`
@@ -177,13 +170,18 @@ export default class Resolver {
     }
 
     public render(items: Array<string>) {
+        const editor = this.activeEditor;
+        if (!editor) {
+            return;
+        }
+
         const templates: Array<string> = [];
-        this.properties.forEach((property: Property) => {
+        this.properties.forEach((property) => {
             const data: Array<string> = [];
-            if (items.includes(R_GETTER)) {
+            if (items.includes(PROP.GETTER)) {
                 data.push(this.getterTemplate(property));
             }
-            if (items.includes(R_SETTER)) {
+            if (items.includes(PROP.SETTER)) {
                 data.push(this.setterTemplate(property));
             }
 
@@ -198,11 +196,10 @@ export default class Resolver {
                 throw new Error('Missing template to render');
             }
 
-            let insertLine = null;
-            for (let lineNumber = App.instance.editor.document.lineCount - 1; lineNumber > 0; lineNumber--) {
-                const line = App.instance.editor.document.lineAt(lineNumber);
-                if (line.text.startsWith('}')) {
-                    insertLine = line;
+            let insertLine: number|null = null;
+            for (let lineNumber = editor.document.lineCount - 1; lineNumber > 0; lineNumber--) {
+                if (editor.document.lineAt(lineNumber).text.startsWith('}')) {
+                    insertLine = lineNumber;
                 }
             }
 
@@ -210,11 +207,11 @@ export default class Resolver {
                 throw new Error('Unable to detect insert line for template.');
             }
 
-            App.instance.editor.edit((edit: TextEditorEdit) => {
-                edit.replace(new Position(insertLine.lineNumber, 0), templates.join(''));
+            editor.edit((edit: TextEditorEdit) => {
+                edit.replace(new Position(insertLine as number, 0), templates.join(''));
             });
-        } catch (error: any) {
-            App.instance.showMessage(`Error generating object: '${error.message}'.`, M_ERROR);
+        } catch (error) {
+            this.showMessage(`Error generating object: '${(error as Error).message}'.`, MESSAGE.ERROR);
         }
     }
 }

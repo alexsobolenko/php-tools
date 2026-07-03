@@ -2,7 +2,7 @@
     "name": "advanced-php-tools",
     "displayName": "Advanced PHP tools",
     "description": "Tools for better PHP development",
-    "version": "0.6.1",
+    "version": "1.0.0",
     "license": "MIT",
     "author": {
         "name": "Alexey Sobolenko",
@@ -103,6 +103,18 @@
             {
                 "command": "advanced-php-tools.generate-constructor",
                 "title": "Advanced PHP Tools. Generate class constructor"
+            },
+            {
+                "command": "advanced-php-tools.convert-string-to-concatenation",
+                "title": "Advanced PHP Tools. Convert string to concatenation"
+            },
+            {
+                "command": "advanced-php-tools.convert-string-to-sprintf",
+                "title": "Advanced PHP Tools. Convert string to sprintf"
+            },
+            {
+                "command": "advanced-php-tools.convert-string-to-interpolation",
+                "title": "Advanced PHP Tools. Convert string to interpolation"
             }
         ],
         "snippets": [
@@ -221,6 +233,7 @@
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
+        "test": "node --test out/test/*/*.test.js out/test/*/*/*.test.js",
         "lint": "eslint src",
         "package": "vsce package",
         "publish": "vsce publish"
@@ -231,7 +244,6 @@
         "@types/vscode": "^1.103.0",
         "@typescript-eslint/eslint-plugin": "^8.42.0",
         "@typescript-eslint/parser": "^8.42.0",
-        "@vscode/test-electron": "^2.5.2",
         "@vscode/vsce": "^3.6.0",
         "eslint": "^9.35.0",
         "typescript": "^5.8.3"

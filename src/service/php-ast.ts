@@ -1,29 +1,15 @@
-import {Range, TextDocument} from 'vscode';
 import {Engine, Program} from 'php-parser';
-import App from '../app';
-
-export interface IPhpNode {
-    kind?: string;
-    name?: any;
-    loc?: {
-        start?: {
-            line?: number;
-            offset?: number;
-        };
-        end?: {
-            line?: number;
-            offset?: number;
-        };
-    };
-    [key: string]: any;
-}
+import {Range, TextDocument} from 'vscode';
+import {IPhpNode} from '../interfaces';
 
 let parser: Engine | null = null;
-let fallbackParser: Engine | null = null;
 
 function phpParser(): Engine {
     if (parser === null) {
-        parser = new Engine(App.instance.composer('php-parser-params'));
+        parser = new Engine({
+            parser: {extractDoc: true, suppressErrors: true, version: '8.2'},
+            ast: {withPositions: true},
+        });
     }
 
     return parser;
@@ -33,26 +19,11 @@ export function parsePhp(buffer: string): Program {
     return phpParser().parseCode(buffer, '');
 }
 
-function phpFallbackParser(): Engine {
-    if (fallbackParser === null) {
-        fallbackParser = new Engine({
-            parser: {extractDoc: true, suppressErrors: true, version: '8.4'},
-            ast: {withPositions: true},
-        });
-    }
-
-    return fallbackParser;
-}
-
 export function tryParsePhp(buffer: string): Program | null {
     try {
         return parsePhp(buffer);
-    } catch (error) {
-        try {
-            return phpFallbackParser().parseCode(buffer, '');
-        } catch (fallbackError) {
-            return null;
-        }
+    } catch {
+        return null;
     }
 }
 
@@ -87,16 +58,6 @@ export function walkPhp(
     });
 }
 
-export function nodeRange(document: TextDocument, node: IPhpNode): Range | null {
-    const start = node.loc?.start?.offset;
-    const end = node.loc?.end?.offset;
-    if (typeof start !== 'number' || typeof end !== 'number') {
-        return null;
-    }
-
-    return new Range(document.positionAt(start), document.positionAt(end));
-}
-
 export function nodeName(node: any): string | null {
     if (typeof node === 'string') {
         return node;
@@ -117,27 +78,17 @@ export function nodeName(node: any): string | null {
     return null;
 }
 
-export function collectUseStatements(program: Program): Map<string, string> {
-    const uses = new Map<string, string>();
+export function nodeRange(document: TextDocument, node: IPhpNode): Range|null {
+    const start = node.loc?.start?.offset;
+    const end = node.loc?.end?.offset;
+    if (typeof start !== 'number' || typeof end !== 'number') {
+        return null;
+    }
 
-    walkPhp(program, (node) => {
-        if (node.kind !== 'useitem') {
-            return;
-        }
-
-        const fullName = nodeName(node.name);
-        if (!fullName) {
-            return;
-        }
-
-        const alias = nodeName(node.alias) ?? fullName.split('\\').pop() ?? fullName;
-        uses.set(alias, fullName.replace(/^\\/, ''));
-    });
-
-    return uses;
+    return new Range(document.positionAt(start), document.positionAt(end));
 }
 
-export function resolveClassReference(node: any, uses: Map<string, string>): string | null {
+export function resolveClassReference(node: any, uses: Map<string, string>): string|null {
     if (!node || typeof node !== 'object') {
         return null;
     }
@@ -160,4 +111,24 @@ export function resolveClassReference(node: any, uses: Map<string, string>): str
     const value = nodeName(node);
 
     return value && value.includes('\\') ? value.replace(/^\\/, '') : null;
+}
+
+export function collectUseStatements(program: Program): Map<string, string> {
+    const uses = new Map<string, string>();
+
+    walkPhp(program, (node) => {
+        if (node.kind !== 'useitem') {
+            return;
+        }
+
+        const fullName = nodeName(node.name);
+        if (!fullName) {
+            return;
+        }
+
+        const alias = nodeName(node.alias) ?? fullName.split('\\').pop() ?? fullName;
+        uses.set(alias, fullName.replace(/^\\/, ''));
+    });
+
+    return uses;
 }

@@ -1,5 +1,19 @@
 # Change Log
 
+## [1.0.0] - 2026-07-03
+
+### Changed
+
+- Rewrote the extension internals on a modular architecture, replacing the legacy global `App` singleton with per-feature classes and shared services
+- Added a test suite covering all features and framework integrations
+- Added CI pipelines for GitHub Actions, GitLab CI, and Codeberg/Woodpecker CI
+
+## [0.6.2] - 2026-05-19
+
+### Added
+
+- Added string conversion between concatenation, `sprintf(...)`, and double-quoted interpolation
+
 ## [0.6.1] - 2026-04-15
 
 ### Changed

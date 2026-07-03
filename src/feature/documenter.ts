@@ -1,23 +1,33 @@
 import {Position, Range, TextDocument, TextEditorEdit, window} from 'vscode';
-import App from '../../app';
+import Feature from '../feature';
 import {
-    D_REGEX_CLASS,
-    D_REGEX_CONSTANT,
-    D_REGEX_FUNCTION,
-    D_REGEX_PROPERTY,
-    M_ERROR,
-    M_INFO,
-} from '../../constants';
-import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from './block';
+    DOC_CONST_DESCR,
+    DOC_LINES_AFTER_DESCR,
+    DOC_LINES_BEFORE_RETURN,
+    DOC_LINES_BEFORE_THROWS,
+    DOC_PROPERTY_DESCR,
+    DOC_RETURN_VOID,
+    DOC_SHOW_DESCR,
+    DOC_SHOW_THROWS_ON_DIFF_LINES,
+    MESSAGE,
+    PHPDOC,
+} from '../constants';
+import {IImportInsert, IImportState} from '../interfaces';
+import {Block, ClassBlock, ConstantBlock, FunctionBlock, PropertyBlock, VariableBlock} from '../model/doc-block';
 
 const D_REGEX_VARIABLE = /^\s*(\$\w+)\s*=/u;
 
-export default class Documenter {
-    public blocks: Array<Block>;
+export default class Documenter extends Feature {
+    private blocks: Array<Block> = [];
 
     public constructor(positions: Array<Position>) {
-        this.blocks = [];
-        const {document} = App.instance.editor;
+        super();
+
+        const document = this.activeEditor?.document;
+        if (!document) {
+            return;
+        }
+
         positions.forEach((p) => {
             const declarationPosition = this.resolveDeclarationPosition(document, p);
             if (declarationPosition && !this.hasExistingPhpDoc(document, declarationPosition)) {
@@ -27,13 +37,19 @@ export default class Documenter {
                 }
             }
         });
-        if (this.blocks.length < 1) {
-            App.instance.showMessage('Phpdoc already exists', M_INFO);
+
+        if (positions.length > 0 && this.blocks.length < 1) {
+            this.showMessage('Phpdoc already exists', MESSAGE.INFO);
         }
     }
 
     public render() {
-        const {document} = App.instance.editor;
+        const editor = this.activeEditor;
+        if (!editor) {
+            return;
+        }
+
+        const {document} = editor;
         const importState = this.collectImportState(document);
         this.blocks.forEach((block) => {
             if (block instanceof FunctionBlock) {
@@ -42,18 +58,23 @@ export default class Documenter {
         });
 
         const data: Array<{startLine: number, template: string}> = [];
-        this.blocks.forEach((b) => {
+        this.blocks.forEach((block) => {
+            if (block.error) {
+                this.showMessage(`${block.error} - in block ${block.name}`, MESSAGE.ERROR);
+            }
+
             try {
-                const {template} = b;
+                const {template} = block;
                 if (template === '') {
                     throw new Error('Missing template to render');
                 }
-                data.push({startLine: b.startLine, template});
-            } catch (error: any) {
-                App.instance.showMessage(`${error.message} - in block ${b.name}`, M_ERROR);
+                data.push({startLine: block.startLine, template});
+            } catch (error) {
+                this.showMessage(`${(error as Error).message} - in block ${block.name}`, MESSAGE.ERROR);
             }
         });
-        App.instance.editor.edit((edit: TextEditorEdit) => {
+
+        editor.edit((edit: TextEditorEdit) => {
             const importsToInsert = this.blocks
                 .flatMap((block) => block.importsToAdd)
                 .filter((value, index, array) => array.indexOf(value) === index);
@@ -76,37 +97,47 @@ export default class Documenter {
     }
 
     public static async selectBlocks(placeHolder: string): Promise<Array<Position>> {
-        const {document} = App.instance.editor;
+        const editor = window.activeTextEditor;
+        if (!editor || editor.document.languageId !== 'php') {
+            return [];
+        }
+
+        const {document} = editor;
         const positions: Array<{name: string, position: Position}> = [];
+        let parenDepth = 0;
         for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
             const lineText = document.lineAt(lineNumber).text;
+            // A promoted constructor parameter (`private int $x` inside `__construct(...)`) reads
+            // identically to a property declaration on its own line - skip it here so it isn't
+            // offered as a separate "Property" entry; the constructor already documents it.
+            const insideParameterList = parenDepth > 0;
             let charNumber = null;
             let name = null;
             let matches = null;
             let type = null;
 
-            matches = D_REGEX_CLASS.exec(lineText) as Array<string>|null;
+            matches = PHPDOC.CLASS.REGEX.exec(lineText) as Array<string>|null;
             if (matches !== null) {
                 charNumber = 0;
                 name = matches[2] as string;
-                type = App.instance.capitalizeFirstCharTrimmed(matches[1]);
+                type = matches[1].charAt(0).toUpperCase() + matches[1].slice(1);
             }
 
-            matches = D_REGEX_CONSTANT.exec(lineText) as Array<string>|null;
+            matches = PHPDOC.CONSTANT.REGEX.exec(lineText) as Array<string>|null;
             if (matches !== null) {
                 charNumber = 5;
                 name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
                 type = 'Constant';
             }
 
-            matches = D_REGEX_PROPERTY.exec(lineText) as Array<string>|null;
+            matches = insideParameterList ? null : PHPDOC.PROPERTY.REGEX.exec(lineText) as Array<string>|null;
             if (matches !== null) {
                 charNumber = 5;
                 name = matches.length < 4 ? matches[2] : `${matches[2]} ${matches[3]}`;
                 type = 'Property';
             }
 
-            matches = D_REGEX_FUNCTION.exec(lineText) as Array<string>|null;
+            matches = PHPDOC.FUNCTION.REGEX.exec(lineText) as Array<string>|null;
             if (matches !== null) {
                 charNumber = 5;
                 name = matches[1] as string;
@@ -125,6 +156,14 @@ export default class Documenter {
                     name: `${positions.length + 1}. ${name} (${type})`,
                     position: new Position(lineNumber, charNumber),
                 });
+            }
+
+            for (const char of lineText) {
+                if (char === '(') {
+                    parenDepth++;
+                } else if (char === ')') {
+                    parenDepth = Math.max(0, parenDepth - 1);
+                }
             }
         }
 
@@ -151,32 +190,45 @@ export default class Documenter {
         return /\/\*\*[\s\S]*?\*\//.test(textBefore);
     }
 
-    private createBlock(document: TextDocument, position: Position): Block | null {
+    private createBlock(document: TextDocument, position: Position): Block|null {
         const {text} = document.lineAt(position.line);
-        if (text.match(D_REGEX_CLASS)) {
-            return new ClassBlock(position);
+        if (text.match(PHPDOC.CLASS.REGEX)) {
+            return new ClassBlock(document, position);
         }
 
-        if (text.match(D_REGEX_PROPERTY)) {
-            return new PropertyBlock(position);
+        if (text.match(PHPDOC.PROPERTY.REGEX)) {
+            return new PropertyBlock(document, position, {
+                showDescription: this.getConfig(DOC_PROPERTY_DESCR, false),
+                linesAfterDescription: this.getConfig(DOC_LINES_AFTER_DESCR, 0),
+            });
         }
 
-        if (text.match(D_REGEX_CONSTANT)) {
-            return new ConstantBlock(position);
+        if (text.match(PHPDOC.CONSTANT.REGEX)) {
+            return new ConstantBlock(document, position, {
+                showDescription: this.getConfig(DOC_CONST_DESCR, false),
+                linesAfterDescription: this.getConfig(DOC_LINES_AFTER_DESCR, 0),
+            });
         }
 
-        if (text.match(D_REGEX_FUNCTION)) {
-            return new FunctionBlock(position);
+        if (text.match(PHPDOC.FUNCTION.REGEX)) {
+            return new FunctionBlock(document, position, {
+                showDescription: this.getConfig(DOC_SHOW_DESCR, false),
+                linesAfterDescription: this.getConfig(DOC_LINES_AFTER_DESCR, 0),
+                returnVoid: this.getConfig(DOC_RETURN_VOID, false),
+                linesBeforeReturn: this.getConfig(DOC_LINES_BEFORE_RETURN, 0),
+                linesBeforeThrows: this.getConfig(DOC_LINES_BEFORE_THROWS, 0),
+                showThrowsOnDiffLines: this.getConfig(DOC_SHOW_THROWS_ON_DIFF_LINES, true),
+            });
         }
 
         if (text.match(D_REGEX_VARIABLE)) {
-            return new VariableBlock(position);
+            return new VariableBlock(document, position);
         }
 
         return null;
     }
 
-    private resolveDeclarationPosition(document: TextDocument, position: Position): Position | null {
+    private resolveDeclarationPosition(document: TextDocument, position: Position): Position|null {
         const currentText = document.lineAt(position.line).text;
         if (this.createBlock(document, position) !== null) {
             return position;
@@ -198,19 +250,11 @@ export default class Documenter {
         return null;
     }
 
-    private collectImportState(document: TextDocument): {
-        imports: Set<string>,
-        aliases: Set<string>,
-        useLines: Array<string>,
-        firstUseLine: number,
-        namespaceName: string | null,
-        lastUseLine: number,
-        namespaceLine: number,
-    } {
+    private collectImportState(document: TextDocument): IImportState {
         const imports = new Set<string>();
         const aliases = new Set<string>();
         const useLines: Array<string> = [];
-        let namespaceName: string | null = null;
+        let namespaceName: string|null = null;
         let firstUseLine = -1;
         let lastUseLine = -1;
         let namespaceLine = -1;
@@ -231,11 +275,12 @@ export default class Documenter {
             if (firstUseLine === -1) {
                 firstUseLine = lineNumber;
             }
+
             lastUseLine = lineNumber;
             useLines.push(lineText);
             const parts = (useMatch[1] as string).split(/\s+as\s+/iu);
             const fqcn = (parts[0] as string).trim().replace(/^\\/, '');
-            const alias = (parts[1] as string | undefined)?.trim() ?? fqcn.split('\\').pop() ?? fqcn;
+            const alias = (parts[1] as string|undefined)?.trim() ?? fqcn.split('\\').pop() ?? fqcn;
             imports.add(fqcn);
             aliases.add(alias);
         }
@@ -254,16 +299,8 @@ export default class Documenter {
     private buildImportInsert(
         document: TextDocument,
         importsToInsert: Array<string>,
-        importState: {
-            imports: Set<string>,
-            aliases: Set<string>,
-            useLines: Array<string>,
-            firstUseLine: number,
-            namespaceName: string | null,
-            lastUseLine: number,
-            namespaceLine: number,
-        },
-    ): {position: Position, text: string, replaceUntilLine?: number} | null {
+        importState: IImportState,
+    ): IImportInsert|null {
         if (importsToInsert.length === 0) {
             return null;
         }
@@ -277,7 +314,7 @@ export default class Documenter {
         let insertLine = 0;
         let prefix = '';
         let suffix = '';
-        let replaceUntilLine: number | undefined;
+        let replaceUntilLine: number|undefined;
 
         if (importState.firstUseLine >= 0 && importState.lastUseLine >= 0) {
             insertLine = importState.firstUseLine;

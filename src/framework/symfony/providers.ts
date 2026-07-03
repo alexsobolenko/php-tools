@@ -13,8 +13,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 import yaml from 'yaml';
-import App from '../../app';
-import {CMD_SYMFONY_CREATE_SERVICE} from '../../constants';
+import {COMMAND} from '../../constants';
 import {
     collectUseStatements,
     nodeName,
@@ -22,11 +21,15 @@ import {
     resolveClassReference,
     tryParsePhp,
     walkPhp,
-} from '../../utils/php-ast';
+} from '../../service/php-ast';
+import {fqcnToPath, getWorkspacePath, pathToNamespace} from '../../service/project';
+import Symfony from './service';
 
 export class SymfonyServicesProvider implements CodeLensProvider {
+    public constructor(private readonly symfony: Symfony) {}
+
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
-        if (!App.instance.symfony.used) {
+        if (!this.symfony.used) {
             return [];
         }
 
@@ -51,7 +54,7 @@ export class SymfonyServicesProvider implements CodeLensProvider {
             }
 
             const fqcn = namespace ? `${namespace}\\${className}` : className;
-            const serviceLocation = App.instance.symfony.getServiceLocation(fqcn);
+            const serviceLocation = this.symfony.getServiceLocation(fqcn);
             if (serviceLocation) {
                 lenses.push(new CodeLens(range, {
                     title: '⚙️ Open in services.yaml',
@@ -66,7 +69,7 @@ export class SymfonyServicesProvider implements CodeLensProvider {
 
             lenses.push(new CodeLens(range, {
                 title: '➕ Create in services.yaml',
-                command: CMD_SYMFONY_CREATE_SERVICE,
+                command: COMMAND.SYMFONY_CREATE_SERVICE,
                 arguments: [fqcn],
             }));
         });
@@ -90,8 +93,10 @@ export class SymfonyServicesProvider implements CodeLensProvider {
 }
 
 export class SymfonyServicesYamlProvider implements CodeLensProvider {
+    public constructor(private readonly symfony: Symfony) {}
+
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
-        if (!App.instance.symfony.used) {
+        if (!this.symfony.used) {
             return [];
         }
 
@@ -99,7 +104,7 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
         let parsed;
         try {
             parsed = yaml.parse(text);
-        } catch (error) {
+        } catch {
             return [];
         }
 
@@ -107,7 +112,7 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
 
         if (parsed?.services) {
             for (const [serviceId, config] of Object.entries(parsed.services)) {
-                if (typeof config === 'object' && (config as any).class) {
+                if (typeof config === 'object' && config !== null && (config as any).class) {
                     this.addClassLens(document, serviceId, (config as any).class, lenses);
                 } else if (this.isFQCN(serviceId)) {
                     this.addClassLens(document, serviceId, serviceId, lenses);
@@ -119,6 +124,9 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
     }
 
     private addClassLens(document: TextDocument, serviceId: string, fqcn: string, lenses: Array<CodeLens>) {
+        // Symfony service ids/class refs use a `@BundleName` or `App\...` shorthand that maps onto
+        // the `src/` directory by convention - this is a different resolution rule than PSR-4
+        // autoload, so it intentionally does not reuse project.ts's fqcnToPath().
         const classPath = this.fqcnToPath(fqcn);
         if (!classPath) {
             return;
@@ -152,7 +160,7 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
         return null;
     }
 
-    private findServiceRange(document: TextDocument, serviceId: string): Range | null {
+    private findServiceRange(document: TextDocument, serviceId: string): Range|null {
         const text = document.getText();
         const lines = text.split('\n');
         for (let i = 0; i < lines.length; i++) {
@@ -170,8 +178,10 @@ export class SymfonyServicesYamlProvider implements CodeLensProvider {
 }
 
 export class SymfonyTemplatesProvider implements CodeLensProvider {
+    public constructor(private readonly symfony: Symfony) {}
+
     public provideCodeLenses(document: TextDocument): Array<CodeLens> {
-        if (!App.instance.symfony.used) {
+        if (!this.symfony.used) {
             return [];
         }
 
@@ -254,7 +264,9 @@ export class SymfonyTemplatesProvider implements CodeLensProvider {
     }
 
     private resolveTemplatePath(templatePath: string): string|null {
-        if (!workspace.workspaceFolders) return null;
+        if (!workspace.workspaceFolders) {
+            return null;
+        }
 
         const searchPaths = ['templates', 'templates/bundles', 'app/Resources/views'];
         for (const folder of workspace.workspaceFolders) {
@@ -275,8 +287,10 @@ export class SymfonyTemplatesProvider implements CodeLensProvider {
 }
 
 export class SymfonyRouteReferencesProvider implements CodeLensProvider {
+    public constructor(private readonly symfony: Symfony) {}
+
     public async provideCodeLenses(document: TextDocument): Promise<Array<CodeLens>> {
-        if (!App.instance.symfony.used) {
+        if (!this.symfony.used) {
             return [];
         }
 
@@ -287,7 +301,7 @@ export class SymfonyRouteReferencesProvider implements CodeLensProvider {
 
         const lenses: Array<CodeLens> = [];
         for (const reference of references) {
-            const location = await App.instance.symfony.getRouteLocation(reference.routeName);
+            const location = await this.symfony.getRouteLocation(reference.routeName);
             if (!location) {
                 continue;
             }
@@ -351,11 +365,13 @@ export class SymfonyRouteReferencesProvider implements CodeLensProvider {
 }
 
 export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
+    public constructor(private readonly symfony: Symfony) {}
+
     public async provideCompletionItems(
         document: TextDocument,
         position: Position,
     ): Promise<Array<CompletionItem>> {
-        if (!App.instance.symfony.used) {
+        if (!this.symfony.used) {
             return [];
         }
 
@@ -379,7 +395,7 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
     private findArgumentsContext(
         document: TextDocument,
         position: Position,
-    ): {argumentsLine: number, argumentsIndent: number, serviceLine: number, fqcn: string} | null {
+    ): {argumentsLine: number, argumentsIndent: number, serviceLine: number, fqcn: string}|null {
         const lines = document.getText().split('\n');
         let argumentsLine = -1;
         let argumentsIndent = -1;
@@ -443,7 +459,7 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
         return -1;
     }
 
-    private resolveServiceClass(lines: Array<string>, serviceLine: number): string | null {
+    private resolveServiceClass(lines: Array<string>, serviceLine: number): string|null {
         const serviceLineText = lines[serviceLine] ?? '';
         const serviceIndent = this.lineIndent(serviceLineText);
         const serviceId = this.extractYamlKey(serviceLineText);
@@ -451,7 +467,7 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
             return null;
         }
 
-        if (App.instance.looksLikeFqcn(serviceId) && serviceId.includes('\\')) {
+        if (this.looksLikeFqcn(serviceId) && serviceId.includes('\\')) {
             return serviceId;
         }
 
@@ -476,7 +492,7 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
     }
 
     private async loadConstructorArguments(fqcn: string): Promise<Array<string>> {
-        const classPath = this.fqcnToPath(fqcn);
+        const classPath = fqcnToPath(fqcn);
         if (!classPath || !fs.existsSync(classPath)) {
             return [];
         }
@@ -508,7 +524,7 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
 
             result = (node.arguments ?? [])
                 .map((argument: any) => nodeName(argument.name))
-                .filter((name: string | null): name is string => !!name)
+                .filter((name: string|null): name is string => !!name)
                 .map((name: string) => `$${name}`);
         });
 
@@ -552,8 +568,8 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
         return item;
     }
 
-    private extractNamespace(program: any): string | null {
-        let namespace: string | null = null;
+    private extractNamespace(program: any): string|null {
+        let namespace: string|null = null;
 
         walkPhp(program, (node) => {
             if (namespace !== null || node.kind !== 'namespace') {
@@ -566,35 +582,14 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
         return namespace;
     }
 
-    private extractYamlKey(line: string): string | null {
-        const match = line.match(/^\s*(['"]?)([^'":]+(?:\\[^'":]+)*)\1\s*:\s*$/u);
+    private extractYamlKey(line: string): string|null {
+        const match = line.match(/^\s*(['"]?)([^'":]+(?:\\[^'":]+)*)\1\s*:(?:\s*$|\s+\S.*)/u);
 
         return match?.[2]?.trim() ?? null;
     }
 
-    private fqcnToPath(fqcn: string): string | null {
-        const autoload = App.instance.composer('autoload', {});
-        const workplacePath = App.instance.composer('workplacePath', null);
-        if (!workplacePath) {
-            return null;
-        }
-
-        for (const [prefix, paths] of Object.entries(autoload)) {
-            if (!fqcn.startsWith(prefix)) {
-                continue;
-            }
-
-            const relativePath = `${fqcn.slice(prefix.length).replace(/\\/g, '/')}.php`;
-            const searchPaths = Array.isArray(paths) ? paths : [paths];
-            for (const basePath of searchPaths) {
-                const fullPath = path.join(workplacePath, basePath as string, relativePath);
-                if (fs.existsSync(fullPath)) {
-                    return fullPath;
-                }
-            }
-        }
-
-        return null;
+    private looksLikeFqcn(serviceId: string): boolean {
+        return /^[A-Za-z0-9_\\]+$/.test(serviceId);
     }
 
     private lineIndent(line: string): number {
@@ -606,13 +601,15 @@ export class SymfonyServiceArgumentsProvider implements CompletionItemProvider {
 
 export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvider {
     private entityFieldsCache = new Map<string, {mtime: number, fields: Array<string>}>();
-    private relationTargetCache = new Map<string, {mtime: number, target: string | null}>();
+    private relationTargetCache = new Map<string, {mtime: number, target: string|null}>();
+
+    public constructor(private readonly symfony: Symfony) {}
 
     public async provideCompletionItems(
         document: TextDocument,
         position: Position,
     ): Promise<Array<CompletionItem>> {
-        if (!App.instance.symfony.used || document.languageId !== 'php') {
+        if (!this.symfony.used || document.languageId !== 'php') {
             return [];
         }
 
@@ -644,7 +641,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
     private findAliasContext(
         document: TextDocument,
         position: Position,
-    ): {alias: string, prefix: string} | null {
+    ): {alias: string, prefix: string}|null {
         const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
         const match = linePrefix.match(/([A-Za-z_]\w*)\.([A-Za-z_]\w*)?$/u);
         if (!match) {
@@ -657,7 +654,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         };
     }
 
-    private resolveEntityForAlias(program: any, filePath: string, line: number, alias: string): string | null {
+    private resolveEntityForAlias(program: any, filePath: string, line: number, alias: string): string|null {
         const namespace = this.extractNamespace(program);
         const uses = collectUseStatements(program);
         const currentClass = this.findCurrentClass(program, line);
@@ -681,8 +678,8 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         return classAliases.get(alias) ?? null;
     }
 
-    private findCurrentClass(program: any, line: number): any | null {
-        let result: any | null = null;
+    private findCurrentClass(program: any, line: number): any|null {
+        let result: any|null = null;
 
         walkPhp(program, (node) => {
             if (result !== null || node.kind !== 'class' || !this.nodeContainsLine(node, line)) {
@@ -695,7 +692,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         return result;
     }
 
-    private findCurrentMethod(classNode: any, line: number): any | null {
+    private findCurrentMethod(classNode: any, line: number): any|null {
         for (const node of classNode.body ?? []) {
             if (node.kind === 'method' && this.nodeContainsLine(node, line)) {
                 return node;
@@ -708,15 +705,15 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
     private resolveRepositoryEntity(
         classNode: any,
         filePath: string,
-        namespace: string | null,
+        namespace: string|null,
         uses: Map<string, string>,
-    ): string | null {
+    ): string|null {
         for (const node of classNode.body ?? []) {
             if (node.kind !== 'method' || nodeName(node.name) !== '__construct') {
                 continue;
             }
 
-            let entityFqcn: string | null = null;
+            let entityFqcn: string|null = null;
             walkPhp(node.body, (child) => {
                 if (entityFqcn !== null || child.kind !== 'call' || child.what?.kind !== 'staticlookup') {
                     return;
@@ -748,7 +745,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
     private collectAliases(
         scopeNode: any,
         repositoryEntity: string,
-        namespace: string | null,
+        namespace: string|null,
         uses: Map<string, string>,
     ): Map<string, string> {
         const aliases = new Map<string, string>();
@@ -815,7 +812,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
     }
 
     private async loadEntityFields(fqcn: string): Promise<Array<string>> {
-        const entityPath = this.fqcnToPath(fqcn);
+        const entityPath = fqcnToPath(fqcn);
         if (!entityPath || !fs.existsSync(entityPath)) {
             return [];
         }
@@ -884,7 +881,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         return item;
     }
 
-    private resolveClassName(node: any, namespace: string | null, uses: Map<string, string>): string | null {
+    private resolveClassName(node: any, namespace: string|null, uses: Map<string, string>): string|null {
         const resolved = resolveClassReference(node, uses);
         if (resolved) {
             return resolved;
@@ -906,8 +903,8 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         return namespace ? `${namespace}\\${name}` : name;
     }
 
-    private resolveEntityPropertyTarget(entityFqcn: string, propertyName: string): string | null {
-        const entityPath = this.fqcnToPath(entityFqcn);
+    private resolveEntityPropertyTarget(entityFqcn: string, propertyName: string): string|null {
+        const entityPath = fqcnToPath(entityFqcn);
         if (!entityPath || !fs.existsSync(entityPath)) {
             return null;
         }
@@ -926,7 +923,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
 
         const namespace = this.extractNamespace(program);
         const uses = collectUseStatements(program);
-        let resolvedTarget: string | null = null;
+        let resolvedTarget: string|null = null;
 
         walkPhp(program, (node) => {
             if (resolvedTarget !== null || node.kind !== 'propertystatement') {
@@ -949,9 +946,9 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
     private resolvePropertyTarget(
         property: any,
         propertyStatement: any,
-        namespace: string | null,
+        namespace: string|null,
         uses: Map<string, string>,
-    ): string | null {
+    ): string|null {
         const typedTarget = this.resolveClassName(property.type, namespace, uses);
         if (typedTarget && !this.isScalarType(typedTarget)) {
             return typedTarget;
@@ -967,9 +964,9 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
 
     private resolveRelationTargetFromAttributes(
         attrGroups: Array<any>,
-        namespace: string | null,
+        namespace: string|null,
         uses: Map<string, string>,
-    ): string | null {
+    ): string|null {
         for (const group of attrGroups) {
             for (const attr of group.attrs ?? []) {
                 const attrName = nodeName(attr.name) ?? '';
@@ -995,9 +992,9 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
 
     private resolveRelationTargetFromComments(
         comments: Array<any>,
-        namespace: string | null,
+        namespace: string|null,
         uses: Map<string, string>,
-    ): string | null {
+    ): string|null {
         for (const comment of comments) {
             const text = typeof comment?.value === 'string' ? comment.value : '';
             if (!/(ManyToOne|OneToOne|OneToMany|ManyToMany)/u.test(text)) {
@@ -1037,10 +1034,10 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
     }
 
     private inferRepositoryEntity(
-        className: string | null,
-        namespace: string | null,
+        className: string|null,
+        namespace: string|null,
         filePath: string,
-    ): string | null {
+    ): string|null {
         if (!className?.endsWith('Repository')) {
             return null;
         }
@@ -1056,7 +1053,7 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         ].filter((candidate): candidate is string => !!candidate);
 
         for (const candidate of candidates) {
-            if (this.fqcnToPath(candidate)) {
+            if (fqcnToPath(candidate)) {
                 return candidate;
             }
         }
@@ -1064,8 +1061,8 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         return null;
     }
 
-    private inferEntityFromRepositoryPath(filePath: string, entityName: string): string | null {
-        const namespace = App.instance.pathToNamespace(filePath);
+    private inferEntityFromRepositoryPath(filePath: string, entityName: string): string|null {
+        const namespace = pathToNamespace(filePath);
         if (!namespace.endsWith('Repository')) {
             return null;
         }
@@ -1078,8 +1075,8 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         return entityNamespace;
     }
 
-    private inferEntityFromRepositoryFsPath(filePath: string, entityName: string): string | null {
-        const workplacePath = App.instance.composer('workplacePath', null);
+    private inferEntityFromRepositoryFsPath(filePath: string, entityName: string): string|null {
+        const workplacePath = getWorkspacePath();
         if (!workplacePath) {
             return null;
         }
@@ -1100,11 +1097,11 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
             return null;
         }
 
-        return App.instance.pathToNamespace(fullEntityPath);
+        return pathToNamespace(fullEntityPath);
     }
 
-    private extractNamespace(program: any): string | null {
-        let namespace: string | null = null;
+    private extractNamespace(program: any): string|null {
+        let namespace: string|null = null;
 
         walkPhp(program, (node) => {
             if (namespace !== null || node.kind !== 'namespace') {
@@ -1115,31 +1112,6 @@ export class SymfonyDoctrineEntityFieldsProvider implements CompletionItemProvid
         });
 
         return namespace;
-    }
-
-    private fqcnToPath(fqcn: string): string | null {
-        const autoload = App.instance.composer('autoload', {});
-        const workplacePath = App.instance.composer('workplacePath', null);
-        if (!workplacePath) {
-            return null;
-        }
-
-        for (const [prefix, paths] of Object.entries(autoload)) {
-            if (!fqcn.startsWith(prefix)) {
-                continue;
-            }
-
-            const relativePath = `${fqcn.slice(prefix.length).replace(/\\/g, '/')}.php`;
-            const searchPaths = Array.isArray(paths) ? paths : [paths];
-            for (const basePath of searchPaths) {
-                const fullPath = path.join(workplacePath, basePath as string, relativePath);
-                if (fs.existsSync(fullPath)) {
-                    return fullPath;
-                }
-            }
-        }
-
-        return null;
     }
 
     private nodeContainsLine(node: any, line: number): boolean {
