@@ -233,7 +233,7 @@
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
-        "test": "node --test out/test/*/*.test.js",
+        "test": "node --test out/test/*/*.test.js out/test/*/*/*.test.js",
         "lint": "eslint src",
         "package": "vsce package",
         "publish": "vsce publish"

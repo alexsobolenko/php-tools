@@ -4,7 +4,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {afterEach, describe, it} from 'node:test';
-import {pathToNamespace, resetProjectCache, watchComposerJson} from '../../service/project';
+import {
+    getAutoload,
+    getComposerData,
+    getWorkspacePath,
+    pathToNamespace,
+    resetProjectCache,
+    watchComposerJson,
+} from '../../service/project';
 
 const createdDirs: Array<string> = [];
 
@@ -77,5 +84,17 @@ describe('project', () => {
         triggerComposerJsonChange();
 
         assert.strictEqual(pathToNamespace(path.join(root, 'src', 'Domain')), 'Acme\\Domain');
+    });
+
+    it('exposes the workspace root, autoload map and raw composer.json data', () => {
+        const root = createProjectDir({
+            require: {'yiisoft/yii2': '^2.0'},
+            autoload: {'psr-4': {'App\\': 'src/'}},
+        });
+        setWorkspaceFolder(root);
+
+        assert.strictEqual(getWorkspacePath(), root);
+        assert.deepStrictEqual(getAutoload(), {'App\\': 'src/'});
+        assert.deepStrictEqual(getComposerData().require, {'yiisoft/yii2': '^2.0'});
     });
 });

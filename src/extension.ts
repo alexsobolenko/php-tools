@@ -1,13 +1,52 @@
-import {commands, ExtensionContext, window} from 'vscode';
+import {commands, ExtensionContext, languages, Range, Selection, window, workspace} from 'vscode';
 import Accessor from './feature/accessor';
 import Constructor from './feature/constructor';
 import Documenter from './feature/documenter';
 import Fabric from './feature/fabric';
+import Framework from './feature/framework';
 import StringConvertor from './feature/string-convertor';
 import {watchComposerJson} from './service/project';
 import {COMMAND, CONV, FABRIC, PROP} from './constants';
 
 export async function activate(context: ExtensionContext) {
+    /* php frameworks */
+    const framework = new Framework();
+    framework.providers.forEach((p) => {
+        context.subscriptions.push(languages.registerCodeLensProvider(p.selector, p.provider));
+    });
+    framework.completionProviders.forEach((p) => {
+        context.subscriptions.push(languages.registerCompletionItemProvider(
+            p.selector,
+            p.provider,
+            ...(p.triggers ?? []),
+        ));
+    });
+
+    /* symfony */
+    const servicesWatcher = workspace.createFileSystemWatcher('**/config/services.{yml,yaml}');
+    servicesWatcher.onDidChange((uri) => framework.symfony.updateServices(uri));
+    servicesWatcher.onDidCreate((uri) => framework.symfony.updateServices(uri));
+    context.subscriptions.push(servicesWatcher);
+    context.subscriptions.push(commands.registerCommand(COMMAND.SYMFONY_CREATE_SERVICE, async (fqcn: string) => {
+        const location = await framework.symfony.createService(fqcn);
+        if (!location) {
+            window.showWarningMessage('Unable to create service in services.yaml');
+
+            return;
+        }
+
+        const document = await workspace.openTextDocument(location.uri);
+        const editor = await window.showTextDocument(document);
+        editor.selection = new Selection(location.range.start, location.range.start);
+        editor.revealRange(new Range(location.range.start, location.range.start));
+    }));
+    const routeWatcher = workspace.createFileSystemWatcher('**/*Controller.php');
+    routeWatcher.onDidChange(() => framework.symfony.invalidateRoutes());
+    routeWatcher.onDidCreate(() => framework.symfony.invalidateRoutes());
+    routeWatcher.onDidDelete(() => framework.symfony.invalidateRoutes());
+    context.subscriptions.push(routeWatcher);
+    await framework.symfony.updateServices(await framework.symfony.getServicesConfigUri());
+
     /* phpdoc */
     context.subscriptions.push(commands.registerCommand(COMMAND.GENERATE_PHPDOC, () => {
         const editor = window.activeTextEditor;

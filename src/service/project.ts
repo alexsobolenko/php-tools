@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {Disposable, workspace} from 'vscode';
-import {IComposerAutoload, IProjectCache} from '../interfaces';
+import {IComposerAutoload, IComposerData, IProjectCache} from '../interfaces';
 
 let cache: IProjectCache|null = null;
 
@@ -11,34 +11,47 @@ function workspacePath(): string {
     return folders && folders.length > 0 ? folders[0].uri.fsPath : '';
 }
 
-function readAutoload(workspaceRoot: string): IComposerAutoload {
+function readComposerJson(workspaceRoot: string): {autoload: IComposerAutoload, composerData: IComposerData} {
     if (!workspaceRoot) {
-        return {};
+        return {autoload: {}, composerData: {}};
     }
 
     const composerFile = path.join(workspaceRoot, 'composer.json');
     if (!fs.existsSync(composerFile)) {
-        return {};
+        return {autoload: {}, composerData: {}};
     }
 
     try {
-        const data = JSON.parse(fs.readFileSync(composerFile, 'utf-8'));
-        const psr4 = (data.autoload || {})['psr-4'] || {};
-        const psr4Dev = (data['autoload-dev'] || {})['psr-4'] || {};
+        const composerData = JSON.parse(fs.readFileSync(composerFile, 'utf-8'));
+        const psr4 = (composerData.autoload || {})['psr-4'] || {};
+        const psr4Dev = (composerData['autoload-dev'] || {})['psr-4'] || {};
 
-        return {...psr4, ...psr4Dev};
+        return {autoload: {...psr4, ...psr4Dev}, composerData};
     } catch {
-        return {};
+        return {autoload: {}, composerData: {}};
     }
 }
 
 function getCache(): IProjectCache {
     if (cache === null) {
         const root = workspacePath();
-        cache = {workspacePath: root, autoload: readAutoload(root)};
+        const {autoload, composerData} = readComposerJson(root);
+        cache = {workspacePath: root, autoload, composerData};
     }
 
     return cache;
+}
+
+export function getWorkspacePath(): string {
+    return getCache().workspacePath;
+}
+
+export function getAutoload(): IComposerAutoload {
+    return getCache().autoload;
+}
+
+export function getComposerData(): IComposerData {
+    return getCache().composerData;
 }
 
 export function resetProjectCache(): void {

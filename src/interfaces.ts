@@ -25,9 +25,14 @@ export interface IComposerAutoload {
     [namespace: string]: string|Array<string>;
 }
 
+export interface IComposerData {
+    [key: string]: any;
+}
+
 export interface IProjectCache {
     workspacePath: string;
     autoload: IComposerAutoload;
+    composerData: IComposerData;
 }
 
 export interface IImportState {

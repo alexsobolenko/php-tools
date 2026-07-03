@@ -1,4 +1,5 @@
 import {Engine, Program} from 'php-parser';
+import {Range, TextDocument} from 'vscode';
 import {IPhpNode} from '../interfaces';
 
 let parser: Engine | null = null;
@@ -75,6 +76,41 @@ export function nodeName(node: any): string | null {
     }
 
     return null;
+}
+
+export function nodeRange(document: TextDocument, node: IPhpNode): Range|null {
+    const start = node.loc?.start?.offset;
+    const end = node.loc?.end?.offset;
+    if (typeof start !== 'number' || typeof end !== 'number') {
+        return null;
+    }
+
+    return new Range(document.positionAt(start), document.positionAt(end));
+}
+
+export function resolveClassReference(node: any, uses: Map<string, string>): string|null {
+    if (!node || typeof node !== 'object') {
+        return null;
+    }
+
+    if (node.kind === 'string') {
+        const value = nodeName(node);
+
+        return value && value.includes('\\') ? value.replace(/^\\/, '') : null;
+    }
+
+    if (node.kind === 'staticlookup' && nodeName(node.offset) === 'class') {
+        const shortName = nodeName(node.what);
+        if (!shortName) {
+            return null;
+        }
+
+        return uses.get(shortName) ?? shortName.replace(/^\\/, '');
+    }
+
+    const value = nodeName(node);
+
+    return value && value.includes('\\') ? value.replace(/^\\/, '') : null;
 }
 
 export function collectUseStatements(program: Program): Map<string, string> {
